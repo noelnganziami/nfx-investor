@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFX-Investor ProMax - Advanced Investment Platform</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="toast-container"></div>
+    <div id="maintenance-mode-banner" class="hidden">Site is currently undergoing maintenance. Please check back later.</div>
+
+    <header>
+      <div class="header-container">
+            <h1><a href="#" id="nav-home-logo"><i class="fas fa-chart-pie"></i> <span id="app-name-header">NFX-Investor ProMax</span></a></h1>
+
+            <button id="nav-toggle" class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">
+                <span class="hamburger"></span>
+            </button>
+
+            <nav id="main-nav">
+                <ul>
+                    <li><a href="#" id="nav-home" class="active"><i class="fas fa-home"></i> Home</a></li>
+                    <li><a href="#" id="nav-plans"><i class="fas fa-clipboard-list"></i> Plans</a></li>
+                    <li><a href="#" id="nav-faq"><i class="fas fa-question-circle"></i> FAQ</a></li>
+                    <li><a href="#" id="nav-login" class="auth-nav"><i class="fas fa-sign-in-alt"></i> Login</a></li>
+                    <li><a href="#" id="nav-register" class="auth-nav"><i class="fas fa-user-plus"></i> Register</a></li>
+                    <li><a href="#" id="nav-dashboard" class="hidden user-nav"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                    <li><a href="#" id="nav-admin" class="hidden admin-nav"><i class="fas fa-user-shield"></i> Admin Panel</a></li>
+                    <li id="user-notification-bell" class="hidden user-nav">
+                        <a href="#" class="notification-bell" onclick="toggleNotificationsDropdown(event)">
+                            <i class="fas fa-bell"></i>
+                            <span class="notification-count" id="notification-count-badge">0</span>
+                        </a>
+                        <div class="notifications-dropdown" id="notifications-dropdown-container">
+                            <div id="notifications-list">
+                                <p class="no-notifications">No new notifications.</p>
+                            </div>
+                        </div>
+                    </li>
+                    <li><a href="#" id="nav-logout" class="hidden user-nav admin-nav"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                    <li id="currency-selector-container-admin"> 
+                        <select id="currency-selector-admin" aria-label="Select Global Currency">
+                        </select>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <!-- Hero Section -->
+        <section id="hero-section-wrapper" class="page-section-group">
+            <div class="hero-section">
+                <video autoplay muted loop playsinline id="hero-video-bg">
+                    <source src="https://assets.mixkit.co/videos/preview/mixkit-stock-market-ticker-scrolling-by-29497-large.mp4" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+                <div class="hero-content">
+                    <h2 id="hero-headline" class="aos" data-aos="fade-up">Unlock Your Financial Potential. Invest with Insight.</h2>
+                    <p class="subtitle aos" data-aos="fade-up" data-aos-delay="200" id="hero-subheadline">Explore strategic investment opportunities and achieve your financial aspirations with NFX-Investor ProMax.</p>
+                    <button class="button button-hero aos" data-aos="fade-up" data-aos-delay="400" onclick="navigateToSection('plans', 'nav-plans')"><i class="fas fa-rocket"></i> Explore Investment Plans</button>
+                </div>
+            </div>
+             <div class="stats-bar">
+                <div class="stats-container">
+                    <div class="stat-item aos" data-aos="fade-up" data-aos-delay="100">
+                        <h3 id="stats-users" data-target="15000">0+</h3>
+                        <p>Registered Investors</p>
+                    </div>
+                    <div class="stat-item aos" data-aos="fade-up" data-aos-delay="200">
+                        <h3 id="stats-invested" data-target="75000000">$0+</h3>
+                        <p>Total Assets Under Management</p>
+                    </div>
+                    <div class="stat-item aos" data-aos="fade-up" data-aos-delay="300">
+                        <h3 id="stats-profit" data-target="12000000">$0+</h3>
+                        <p>Profits Distributed</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Home Content Section -->
+        <section id="home-content-section" class="page-section page-section-group">
+            <h2 class="section-title aos" data-aos="slide-in-right">Why Choose <span class="app-name-dynamic">NFX-Investor ProMax</span>?</h2>
+            <p class="section-subtitle aos" data-aos="slide-in-left">Experience a new era of digital asset management. We offer cutting-edge tools, diverse plans, and a commitment to your financial success.</p>
+            <div class="features-grid" id="features-grid-container">
+                <!-- Features will be rendered by JS, make sure to add aos classes in JS -->
+            </div>
+        </section>
+
+        <!-- Testimonials Section -->
+        <section id="testimonials-section" class="page-section alternate-bg page-section-group">
+            <h2 class="section-title aos" data-aos="fade-up">Investor Success Stories</h2>
+             <div class="testimonials-grid" id="testimonials-grid-container">
+                <!-- Testimonials will be rendered by JS, make sure to add aos classes in JS -->
+            </div>
+        </section>
+
+        <!-- Investment Plans Section (Public) -->
+        <section id="plans-section" class="page-section hidden">
+            <h2 class="section-title aos" data-aos="fade-up">Our Investment Plans</h2>
+            <p class="section-subtitle aos" data-aos="fade-up" data-aos-delay="100">Select from a range of expertly crafted plans. Each designed for optimal projected returns and flexibility.</p>
+            <div class="plans-container" id="public-plans-display"></div>
+            <p style="margin-top:30px; text-align:center; font-size: 1.1rem;">Ready to elevate your investments? <a href="#" onclick="navigateToSection('register', 'nav-register')" style="color: var(--primary-color); font-weight:bold;">Register Now</a> or <a href="#" onclick="navigateToSection('login', 'nav-login')" style="color: var(--primary-color); font-weight:bold;">Login</a>.</p>
+        </section>
+        
+        <!-- FAQ Section -->
+        <section id="faq-section" class="page-section hidden">
+            <h2 class="section-title aos" data-aos="fade-up">Frequently Asked Questions</h2>
+            <div class="faq-container" id="faq-container">
+                <!-- FAQs will be rendered here by JavaScript -->
+            </div>
+        </section>
+
+        <!-- Login Section -->
+        <section id="login-section" class="page-section hidden">
+            <div class="auth-form-container aos" data-aos="fade-up">
+                <h2 class="section-title" style="margin-bottom: 25px;">Secure Investor Login</h2>
+                <form id="login-form">
+                    <div class="form-group">
+                        <label for="login-email">Email Address:</label>
+                        <input type="email" id="login-email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password">Password:</label>
+                        <input type="password" id="login-password" required>
+                    </div>
+                    <button type="submit" class="button button-full-width"><i class="fas fa-lock"></i> Login Securely</button>
+                    <div id="login-message" class="form-message hidden"></div>
+                </form>
+                <p style="margin-top: 20px; text-align: center;">New to <span class="app-name-dynamic">NFX-Investor</span>? <a href="#" onclick="navigateToSection('register', 'nav-register')" style="color: var(--primary-color); font-weight:bold;">Create an Account</a>.</p>
+            </div>
+        </section>
+
+        <!-- Registration Section -->
+        <section id="register-section" class="page-section hidden">
+             <div class="auth-form-container aos" data-aos="fade-up">
+                <h2 class="section-title" style="margin-bottom: 25px;">Join <span class="app-name-dynamic">NFX-Investor ProMax</span></h2>
+                <form id="register-form">
+                    <div class="form-group"><label for="register-name">Full Name:</label><input type="text" id="register-name" required></div>
+                    <div class="form-group"><label for="register-email">Email Address:</label><input type="email" id="register-email" required></div>
+                    <div class="form-group"><label for="register-password">Password (min. 6 characters):</label><input type="password" id="register-password" required minlength="6"></div>
+                    <div class="form-group"><label for="register-referral-code">Referral Code (Optional):</label><input type="text" id="register-referral-code"></div>
+                    <button type="submit" class="button button-full-width"><i class="fas fa-user-check"></i> Register Account</button>
+                    <div id="register-message" class="form-message hidden"></div>
+                </form>
+                <p style="margin-top: 20px; text-align: center;">Already have an account? <a href="#" onclick="navigateToSection('login', 'nav-login')" style="color: var(--primary-color); font-weight:bold;">Login Here</a>.</p>
+            </div>
+        </section>
+
+        <!-- Dashboard Section -->
+        <section id="dashboard-section" class="page-section hidden">
+            <div id="broadcast-message-banner" class="hidden">
+                <p id="broadcast-message-text"></p>
+                <button class="close-broadcast" onclick="this.parentElement.classList.add('hidden')">×</button>
+            </div>
+
+            <h2 class="section-title" id="dashboard-welcome" style="margin-bottom:25px;">Welcome, Investor!</h2>
+            
+            <div class="dashboard-grid">
+                <div class="dashboard-card profile-info">
+                    <h3><i class="fas fa-user-circle"></i> Account Overview</h3>
+                     <div class="profile-picture-container">
+                        <div id="dash-profile-pic-placeholder" class="profile-picture-placeholder "><i class="fas fa-user"></i></div>
+                        <img src="" alt="Profile Picture" id="dash-profile-pic" class="profile-picture hidden">
+                    </div>
+                    <p>Name: <strong id="dash-user-name">N/A</strong></p>
+                    <p>Email: <strong id="dash-user-email">N/A</strong></p>
+                    <p>Member Since: <strong id="dash-member-since">N/A</strong></p>
+                    <p>Referral Code: <strong id="dash-referral-code" style="color:var(--primary-color); cursor:pointer;" title="Click to copy">N/A</strong></p>
+                    <p id="dash-referred-by-container" class="hidden">Referred By: <strong id="dash-referred-by">N/A</strong></p>
+                    <p>Last Login: <strong id="dash-last-login">N/A</strong></p>
+                    <p>Account Currency: <strong id="dash-account-currency">N/A</strong></p>
+                </div>
+
+                <div class="dashboard-card wallet-info">
+                    <h3><i class="fas fa-wallet"></i> My Wallet</h3>
+                    <p>Actual Balance: <strong id="wallet-actual-balance">$0.00</strong></p>
+                    <p>Total Actively Invested: <strong id="wallet-invested-amount">$0.00</strong></p>
+                    <p>Total Realized Profit: <strong id="wallet-realized-profit">$0.00</strong></p>
+                    <div class="dashboard-actions">
+                        <button class="button button-small" onclick="openModal('depositModal')"><i class="fas fa-arrow-down"></i> Deposit Funds</button>
+                        <button class="button button-small button-secondary" onclick="openModal('withdrawalModal')"><i class="fas fa-arrow-up"></i> Withdraw Funds</button>
+                    </div>
+                </div>
+                
+                <div class="dashboard-card dashboard-summary" id="active-investments-summary-card">
+                    <h3><i class="fas fa-piggy-bank"></i> Active Investments (<span id="active-investments-count">0</span>)</h3>
+                    <div id="active-investments-list" style="max-height: 350px; overflow-y: auto;">
+                        <!-- Investment items will be dynamically inserted here -->
+                    </div>
+                    <p id="dashboard-no-investment" class="hidden" style="margin-top:15px; text-align:center;">You currently have no active investments.</p>
+                </div>
+                
+                <div class="dashboard-card profit-calculator-card" id="profit-calculator-card">
+                    <h3><i class="fas fa-calculator"></i> Profit Calculator</h3>
+                    <form id="profit-calculator-form">
+                        <div class="form-group">
+                            <label for="profit-calc-plan-select">Select Plan:</label>
+                            <select id="profit-calc-plan-select" required></select>
+                        </div>
+                        <div class="form-group">
+                            <label for="profit-calc-amount">Investment Amount (<span class="currency-symbol-modal-calc">$</span>):</label>
+                            <input type="number" id="profit-calc-amount" min="1" step="any">
+                        </div>
+                        <button type="button" class="button button-small" id="profit-calc-button"><i class="fas fa-equals"></i> Calculate Projection</button>
+                    </form>
+                    <div id="profit-calculator-results" class="profit-calculator-results hidden" style="margin-top:15px;">
+                        <p>Projected Profit: <strong id="profit-calc-result-profit">$0.00</strong></p>
+                        <p>Projected Total Return: <strong id="profit-calc-result-return">$0.00</strong></p>
+                        <p>Plan Duration: <strong id="profit-calc-result-duration">N/A</strong></p>
+                        <p>Projected Maturity: <strong id="profit-calc-result-maturity">N/A</strong></p>
+                    </div>
+                </div>
+
+                 <div class="dashboard-card profile-settings" id="profile-settings-card">
+                    <h3><i class="fas fa-user-cog"></i> Profile Settings</h3>
+                    <form id="profile-settings-form">
+                        <div class="form-group"><label for="profile-setting-name">Full Name:</label><input type="text" id="profile-setting-name" required></div>
+                        <div class="form-group"><label for="profile-setting-pic-url">Profile Picture URL:</label><input type="url" id="profile-setting-pic-url" placeholder="https://example.com/image.jpg"></div>
+                        <button type="submit" class="button button-small"><i class="fas fa-save"></i> Update Profile</button>
+                    </form>
+                    <hr style="margin: 15px 0;">
+                    <form id="change-password-form">
+                        <h4>Change Password (Simulation)</h4>
+                        <div class="form-group"><label for="current-password">Current Password:</label><input type="password" id="current-password" required></div>
+                        <div class="form-group"><label for="new-password">New Password:</label><input type="password" id="new-password" required minlength="6"></div>
+                        <div class="form-group"><label for="confirm-new-password">Confirm New Password:</label><input type="password" id="confirm-new-password" required></div>
+                        <button type="submit" class="button button-small"><i class="fas fa-key"></i> Change Password</button>
+                        <div id="change-password-message" class="form-message hidden"></div>
+                    </form>
+                    <hr style="margin: 15px 0;">
+                    <form id="financial-goal-form">
+                        <h4>My Financial Goal</h4>
+                        <div class="form-group">
+                            <label for="financial-goal-amount">Target Amount (<span class="currency-symbol-modal-goal">$</span>):</label>
+                            <input type="number" id="financial-goal-amount" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label for="financial-goal-description">Description:</label>
+                            <input type="text" id="financial-goal-description" placeholder="e.g., Dream Vacation">
+                        </div>
+                        <button type="submit" class="button button-small"><i class="fas fa-bullseye"></i> Set/Update Goal</button>
+                    </form>
+                    <div id="financial-goal-display" class="hidden" style="margin-top:10px;">
+                        <p>Goal: <strong id="financial-goal-text-desc">N/A</strong> (<strong id="financial-goal-text-amount">$0.00</strong>)</p>
+                        <div class="financial-goal-progress-bar"><div id="financial-goal-progress-fill" class="financial-goal-progress">0%</div></div>
+                    </div>
+                    <hr style="margin: 15px 0;">
+                    <div class="form-group">
+                        <label for="profile-2fa-toggle">Enable Two-Factor Authentication:</label>
+                        <label class="switch">
+                            <input type="checkbox" id="profile-2fa-toggle" onchange="handle2FAToggleChange(this.checked)">
+                            <span class="slider round"></span>
+                        </label>
+                        <span id="profile-2fa-status" style="margin-left:10px; font-style:italic;"></span>
+                    </div>
+                     <p class="form-info" style="font-size:0.8rem; margin-top:5px;">(Password changes and actual 2FA are not implemented for this platform.)</p>
+                </div>
+
+                 <div class="dashboard-card" id="user-support-card">
+                    <h3><i class="fas fa-headset"></i> Support Center</h3>
+                    <div id="user-ticket-list-brief" class="support-ticket-list" style="max-height:150px; overflow-y:auto; margin-bottom:15px;">
+                        <p class="text-center">Loading your tickets...</p>
+                    </div>
+                    <button class="button button-small" onclick="openModal('userSupportTicketModal')"><i class="fas fa-envelope"></i> View All / New Ticket</button>
+                </div>
+            </div>
+            
+            <div class="dashboard-grid" style="margin-top: 22px;">
+                <div class="dashboard-card">
+                    <h3><i class="fas fa-chart-line"></i> Portfolio Growth Projection</h3>
+                    <div class="chart-container"><canvas id="accountGrowthChart"></canvas></div>
+                </div>
+                <div class="dashboard-card transaction-log">
+                    <h3>
+                        <i class="fas fa-history"></i> Transaction History
+                        <button class="button button-small" onclick="exportUserDashboardToPDF()" style="margin-left:auto;"><i class="fas fa-file-pdf"></i> Export PDF</button>
+                    </h3>
+                     <div class="tx-history-tabs">
+                        <button class="tx-history-tab-button active" onclick="renderTransactionHistory('all', this)">All</button>
+                        <button class="tx-history-tab-button" onclick="renderTransactionHistory('deposit', this)">Deposits</button>
+                        <button class="tx-history-tab-button" onclick="renderTransactionHistory('withdrawal', this)">Withdrawals</button>
+                        <button class="tx-history-tab-button" onclick="renderTransactionHistory('earnings', this)">Earnings</button>
+                         <button class="tx-history-tab-button" onclick="renderTransactionHistory('bonus', this)">Bonus</button>
+                    </div>
+                    <div class="table-responsive-wrapper">
+                        <table id="transaction-table">
+                            <thead><tr><th>Date</th><th>Description</th><th>Amount</th><th>Status</th><th>Type</th></tr></thead>
+                            <tbody id="transaction-table-body"></tbody>
+                        </table>
+                    </div>
+                    <p id="no-transactions" class="hidden" style="text-align:center; margin-top:15px;">No transactions yet.</p>
+                </div>
+            </div>
+
+            <div class="dashboard-card" style="margin-top: 22px;" id="dashboard-investment-options">
+                <h3><i class="fas fa-tasks"></i> Available Investment Plans</h3>
+                <p>Select a plan to invest your wallet balance.</p>
+                <div class="plans-container" id="dashboard-plans-display" style="margin-top:15px;"></div>
+            </div>
+        </section>
+
+        <!-- Admin Panel Section -->
+        <section id="admin-panel-section" class="page-section hidden">
+            <div id="admin-assistant-banner" class="hidden">You are viewing as an Assistant Admin. Some actions are restricted.</div>
+            <h2 class="section-title" id="admin-panel-title"><i class="fas fa-user-shield"></i> Admin Control Panel</h2>
+            
+            <div class="admin-tabs">
+                <button class="admin-tab-button active" data-tab-target="overview" onclick="showAdminMainTab('overview', this)">Overview</button>
+                <button class="admin-tab-button" data-tab-target="userManagement" onclick="showAdminMainTab('userManagement', this)">User Management</button>
+                <button class="admin-tab-button" data-tab-target="transactions" onclick="showAdminMainTab('transactions', this)">All Transactions</button>
+                <button class="admin-tab-button" data-tab-target="contentManagement" onclick="showAdminMainTab('contentManagement', this)">Content Mgt.</button>
+                <button class="admin-tab-button" data-tab-target="planManagement" onclick="showAdminMainTab('planManagement', this)">Plan Mgt.</button>
+                <button class="admin-tab-button" data-tab-target="supportTickets" onclick="showAdminMainTab('supportTickets', this)">Support Tickets</button>
+                <button class="admin-tab-button" data-tab-target="analytics" onclick="showAdminMainTab('analytics', this)">Analytics</button>
+                <button class="admin-tab-button" data-tab-target="settings" onclick="showAdminMainTab('settings', this)">Global Settings</button>
+                <button class="admin-tab-button" data-tab-target="systemLog" onclick="showAdminMainTab('systemLog', this)">System Log</button>
+            </div>
+
+            <!-- Admin Overview Tab -->
+            <div id="admin-overview-tab" class="admin-tab-content active">
+                <div class="dashboard-card" style="margin-bottom:20px;">
+                    <h3><i class="fas fa-globe-americas"></i> Global Platform Stats</h3>
+                    <div class="admin-global-stats" id="admin-global-stats-display"></div>
+                </div>
+                <div class="dashboard-grid">
+                    <div class="dashboard-card">
+                        <h3><i class="fas fa-arrow-circle-down"></i> Pending Deposits (<span id="admin-pending-deposits-count">0</span>)</h3>
+                        <div id="admin-pending-deposits" style="max-height:300px; overflow-y:auto;">No pending deposits.</div>
+                    </div>
+                    <div class="dashboard-card">
+                        <h3><i class="fas fa-arrow-circle-up"></i> Pending Withdrawals (<span id="admin-pending-withdrawals-count">0</span>)</h3>
+                        <div id="admin-pending-withdrawals" style="max-height:300px; overflow-y:auto;">No pending withdrawals.</div>
+                    </div>
+                </div>
+                 <div class="dashboard-card" style="margin-top:20px;">
+                    <h3><i class="fas fa-chalkboard-teacher"></i> Quick Actions</h3>
+                    <button class="button button-small" onclick="showAdminMainTab('userManagement', document.querySelector('.admin-tab-button[data-tab-target=\'userManagement\']'))"><i class="fas fa-users"></i> Manage Users</button>
+                    <button class="button button-small" onclick="showAdminMainTab('transactions', document.querySelector('.admin-tab-button[data-tab-target=\'transactions\']'))" style="margin-left:10px;"><i class="fas fa-exchange-alt"></i> View All Transactions</button>
+                </div>
+            </div>
+            
+            <!-- Admin User Management Tab -->
+            <div id="admin-userManagement-tab" class="admin-tab-content">
+                 <div class="dashboard-card"> 
+                    <h3><i class="fas fa-users-cog"></i> User Management</h3>
+                     <div class="admin-filters">
+                        <div class="form-group"><label for="admin-user-filter-name">Filter by Name/Email:</label><input type="text" id="admin-user-filter-name" placeholder="Search name or email..."></div>
+                        <div class="form-group">
+                            <label for="admin-user-filter-status">Filter by Status:</label>
+                            <select id="admin-user-filter-status">
+                                <option value="">All Statuses</option><option value="active">Active</option><option value="suspended">Suspended</option><option value="assistant_admin">Assistant Admin</option>
+                            </select>
+                        </div>
+                        <button class="button button-small" id="admin-apply-user-filters"><i class="fas fa-filter"></i> Apply Filters</button>
+                        <button class="button button-small button-secondary" id="admin-clear-user-filters"><i class="fas fa-times"></i> Clear</button>
+                    </div>
+                    <div class="table-responsive-wrapper" style="max-height: 500px;"> 
+                        <div id="admin-user-list-table-container">Loading users...</div>
+                    </div>
+                    <p id="admin-no-users-message" class="hidden" style="text-align:center; margin-top:15px;">No users found matching criteria.</p>
+                </div>
+            </div>
+
+            <!-- Admin All Transactions Tab -->
+            <div id="admin-transactions-tab" class="admin-tab-content">
+                <div class="dashboard-card">
+                    <h3><i class="fas fa-exchange-alt"></i> All Platform Transactions</h3>
+                    <div class="admin-filters">
+                        <div class="form-group"><label for="admin-tx-filter-user">Filter by User Email:</label><input type="email" id="admin-tx-filter-user" placeholder="user@example.com"></div>
+                        <div class="form-group">
+                            <label for="admin-tx-filter-type">Filter by Type:</label>
+                            <select id="admin-tx-filter-type">
+                                <option value="">All Types</option><option value="deposit">Deposit</option><option value="withdrawal">Withdrawal</option>
+                                <option value="investment_start">Investment Start</option><option value="profit_payout">Profit Payout</option>
+                                <option value="investment_mature_credit">Maturity Credit</option><option value="admin_credit">Admin Credit</option>
+                                <option value="referral_bonus">Referral Bonus</option><option value="admin_bonus">Admin Bonus</option>
+                            </select>
+                        </div>
+                        <button class="button button-small" id="admin-apply-tx-filters"><i class="fas fa-filter"></i> Apply Filters</button>
+                         <button class="button button-small button-secondary" id="admin-clear-tx-filters"><i class="fas fa-times"></i> Clear</button>
+                    </div>
+                    <div class="table-responsive-wrapper" style="max-height: 500px;">
+                        <table id="admin-all-transactions-table">
+                            <thead><tr><th>Date</th><th>User</th><th>Description</th><th>Amount</th><th>Currency</th><th>Status</th><th>Type</th><th>ID</th></tr></thead>
+                            <tbody id="admin-all-transactions-table-body"></tbody>
+                        </table>
+                    </div>
+                    <p id="admin-no-transactions-message" class="hidden" style="text-align:center; margin-top:15px;">No transactions found matching criteria.</p>
+                </div>
+            </div>
+
+            <!-- Admin Content Management Tab -->
+            <div id="admin-contentManagement-tab" class="admin-tab-content">
+                <div class="dashboard-card">
+                    <h3><i class="fas fa-edit"></i> Homepage Content Management</h3>
+                    <div class="admin-form-card">
+                        <h4>Hero Section</h4>
+                        <form id="admin-hero-content-form">
+                            <div class="form-group"><label for="admin-hero-headline">Headline:</label><input type="text" id="admin-hero-headline"></div>
+                            <div class="form-group"><label for="admin-hero-subheadline">Subheadline:</label><textarea id="admin-hero-subheadline" rows="2"></textarea></div>
+                            <button type="submit" class="button button-small"><i class="fas fa-save"></i> Save Hero Content</button>
+                        </form>
+                    </div>
+                    <div class="admin-form-card">
+                        <h4>Features Section <button type="button" class="button button-small button-success" style="float:right;" onclick="openAdminContentModal('feature', null)"><i class="fas fa-plus"></i> Add Feature</button></h4>
+                        <div id="admin-features-list"></div>
+                    </div>
+                    <div class="admin-form-card">
+                        <h4>Testimonials Section <button type="button" class="button button-small button-success" style="float:right;" onclick="openAdminContentModal('testimonial', null)"><i class="fas fa-plus"></i> Add Testimonial</button></h4>
+                        <div id="admin-testimonials-list"></div>
+                    </div>
+                    <div class="admin-form-card">
+                        <h4>FAQ Section <button type="button" class="button button-small button-success" style="float:right;" onclick="openAdminContentModal('faq', null)"><i class="fas fa-plus"></i> Add FAQ</button></h4>
+                        <div id="admin-faqs-list"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Admin Plan Management Tab -->
+            <div id="admin-planManagement-tab" class="admin-tab-content">
+                <div class="dashboard-card">
+                    <h3><i class="fas fa-tasks-alt"></i> Investment Plan Management</h3>
+                    <div id="admin-investment-plans-list"></div>
+                </div>
+            </div>
+
+             <!-- Admin Support Tickets Tab -->
+            <div id="admin-supportTickets-tab" class="admin-tab-content">
+                <div class="dashboard-card">
+                    <h3><i class="fas fa-life-ring"></i> Support Tickets</h3>
+                    <div class="admin-filters">
+                        <div class="form-group"><label for="admin-ticket-filter-user">Filter by User Email:</label><input type="email" id="admin-ticket-filter-user" placeholder="user@example.com"></div>
+                        <div class="form-group">
+                            <label for="admin-ticket-filter-status">Filter by Status:</label>
+                            <select id="admin-ticket-filter-status">
+                                <option value="">All Statuses</option><option value="open">Open</option>
+                                <option value="admin_reply">Admin Replied</option><option value="user_reply">User Replied</option><option value="closed">Closed</option>
+                            </select>
+                        </div>
+                        <button class="button button-small" id="admin-apply-ticket-filters"><i class="fas fa-filter"></i> Apply</button>
+                        <button class="button button-small button-secondary" id="admin-clear-ticket-filters"><i class="fas fa-times"></i> Clear</button>
+                    </div>
+                    <div id="admin-support-ticket-list" class="support-ticket-list table-responsive-wrapper" style="max-height:500px;"></div>
+                    <p id="admin-no-tickets-message" class="hidden" style="text-align:center; margin-top:15px;">No support tickets found.</p>
+                </div>
+            </div>
+
+
+            <!-- Admin Analytics Tab -->
+            <div id="admin-analytics-tab" class="admin-tab-content">
+                <div class="dashboard-card">
+                    <h3><i class="fas fa-chart-bar"></i> Platform Analytics</h3>
+                    <div class="admin-analytics-grid">
+                        <div><h4>User Registrations (Monthly)</h4><div class="chart-container"><canvas id="adminUserRegistrationChart"></canvas></div></div>
+                        <div><h4>Transaction Overview (Approved)</h4><div class="chart-container"><canvas id="adminTransactionOverviewChart"></canvas></div></div>
+                        <div><h4>Active Plan Popularity</h4><div class="chart-container"><canvas id="adminPlanPopularityChart"></canvas></div></div>
+                        <div><h4>Platform Value (Illustrative)</h4><div class="chart-container"><canvas id="adminPlatformValueChart"></canvas></div></div>
+                        <div><h4>Transaction Volume by Type</h4><div class="chart-container"><canvas id="adminTransactionVolumeChart"></canvas></div></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Admin Settings Tab -->
+            <div id="admin-settings-tab" class="admin-tab-content">
+                 <div class="dashboard-card admin-form-card">
+                    <h3><i class="fas fa-cogs"></i> Global Site Settings</h3>
+                    <form id="admin-global-settings-form">
+                        <div class="form-group"><label for="admin-setting-app-name">Application Name:</label><input type="text" id="admin-setting-app-name"></div>
+                        <hr>
+                        <h4>Site Statistics (Public Display)</h4>
+                        <div class="form-group"><label for="admin-setting-stats-users">Registered Users Text:</label><input type="text" id="admin-setting-stats-users" placeholder="e.g., 15,000+"></div>
+                        <div class="form-group"><label for="admin-setting-stats-invested">Total Invested Base Amount (USD for calc):</label><input type="number" id="admin-setting-stats-invested" step="1000"></div>
+                        <div class="form-group"><label for="admin-setting-stats-profit">Total Profit Base Amount (USD for calc):</label><input type="number" id="admin-setting-stats-profit" step="1000"></div>
+                         <hr>
+                        <h4>Financial Settings</h4>
+                        <div class="form-group"><label for="admin-setting-referral-bonus">Referral Bonus Amount (<span class="currency-symbol-admin">$</span>):</label><input type="number" id="admin-setting-referral-bonus" step="1"></div>
+                        <div class="form-group"><label for="admin-setting-withdrawal-fee">Withdrawal Fee Percent (%):</label><input type="number" id="admin-setting-withdrawal-fee" step="0.1" min="0" max="100"></div>
+                        <div class="form-group"><label for="admin-setting-min-withdrawal">Min Withdrawal Amount (Numeric value in global currency):</label><input type="number" id="admin-setting-min-withdrawal" step="1"></div>
+                        <div class="form-group"><label for="admin-setting-max-withdrawal">Max Withdrawal Amount (Numeric value in global currency):</label><input type="number" id="admin-setting-max-withdrawal" step="100"></div>
+                        <button type="submit" class="button"><i class="fas fa-save"></i> Save Global Settings</button>
+                    </form>
+                 </div>
+                 <div class="dashboard-card admin-form-card">
+                    <h3><i class="fas fa-bullhorn"></i> Broadcast Message to Users</h3>
+                    <form id="admin-broadcast-form">
+                        <div class="form-group">
+                            <label for="admin-broadcast-message">Message:</label>
+                            <textarea id="admin-broadcast-message" rows="3" required placeholder="Enter announcement for users..."></textarea>
+                        </div>
+                        <button type="submit" class="button"><i class="fas fa-paper-plane"></i> Broadcast Message</button>
+                         <button type="button" class="button button-secondary" id="admin-clear-broadcast" style="margin-left:10px;"><i class="fas fa-times-circle"></i> Clear Broadcast</button>
+                    </form>
+                 </div>
+                 <div class="dashboard-card admin-form-card">
+                    <h3><i class="fas fa-tools"></i> Maintenance Mode</h3>
+                    <div class="form-group">
+                        <label for="admin-maintenance-mode-toggle">Enable Site Maintenance Mode:</label>
+                        <label class="switch">
+                            <input type="checkbox" id="admin-maintenance-mode-toggle" onchange="adminToggleMaintenanceMode(this.checked)">
+                            <span class="slider round"></span>
+                        </label>
+                        <span id="admin-maintenance-mode-status" style="margin-left:10px; font-style:italic;">Disabled</span>
+                    </div>
+                    <p class="form-info">When enabled, non-admin users will see a maintenance page and cannot log in or use the platform.</p>
+                 </div>
+            </div>
+
+            <!-- Admin System Log Tab -->
+            <div id="admin-systemLog-tab" class="admin-tab-content">
+                <div class="dashboard-card">
+                    <h3><i class="fas fa-history"></i> Admin System Log</h3>
+                    <div id="admin-system-log-list" class="table-responsive-wrapper" style="max-height: 500px; font-size: 0.85rem; white-space: normal;">
+                        <!-- Log entries will be here -->
+                    </div>
+                     <button class="button button-small button-danger" style="margin-top:15px;" onclick="adminClearSystemLog()"><i class="fas fa-trash-alt"></i> Clear Log</button>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- Admin View User Modal -->
+        <div id="adminViewUserModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="adminViewUserTitle"><i class="fas fa-user-check"></i> User Details</h2>
+                    <button class="close-button" onclick="closeModal('adminViewUserModal')">×</button>
+                </div>
+                <div id="adminViewUserDetails" style="max-height: 70vh; overflow-y: auto;"></div>
+            </div>
+        </div>
+
+        <!-- Admin Edit User Modal -->
+        <div id="adminEditUserModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="adminEditUserTitle"><i class="fas fa-user-edit"></i> Edit User</h2>
+                    <button class="close-button" onclick="closeModal('adminEditUserModal')">×</button>
+                </div>
+                <form id="admin-edit-user-form">
+                    <input type="hidden" id="admin-edit-user-id">
+                    <div class="form-group"><label for="admin-edit-user-name">Full Name:</label><input type="text" id="admin-edit-user-name" required></div>
+                    <div class="form-group"><label for="admin-edit-user-email">Email Address:</label><input type="email" id="admin-edit-user-email" required>
+                        <p class="form-info warning-text" style="color:var(--accent-color);">Changing email affects login. Ensure user is informed.</p>
+                    </div>
+                    <div class="form-group"><label for="admin-edit-user-password">New Password (optional):</label><input type="password" id="admin-edit-user-password" minlength="6" placeholder="Leave blank to keep current"></div>
+                    <hr style="margin:15px 0;">
+                    <h4>Wallet Actions</h4>
+                    <div class="form-group"><label for="admin-edit-user-credit">Add Credit Amount:</label><input type="number" id="admin-edit-user-credit" step="any" placeholder="0"></div>
+                    <div class="form-group"><label for="admin-edit-user-credit-reason">Credit Reason:</label><input type="text" id="admin-edit-user-credit-reason" placeholder="e.g., Manual Adjustment"></div>
+                    <div class="form-group"><label for="admin-edit-user-bonus">Add Bonus Amount:</label><input type="number" id="admin-edit-user-bonus" step="any" placeholder="0"></div>
+                    <div class="form-group"><label for="admin-edit-user-bonus-reason">Bonus Reason:</label><input type="text" id="admin-edit-user-bonus-reason" placeholder="e.g., Promotional Bonus"></div>
+                    <hr style="margin:15px 0;">
+                    <h4>Status & Roles</h4>
+                    <div class="form-group">
+                        <label for="admin-edit-user-suspended">Account Suspended:</label>
+                        <label class="switch"><input type="checkbox" id="admin-edit-user-suspended"><span class="slider round"></span></label>
+                    </div>
+                     <div class="form-group">
+                        <label for="admin-edit-user-assistant">Assistant Admin Role:</label>
+                        <label class="switch"><input type="checkbox" id="admin-edit-user-assistant"><span class="slider round"></span></label>
+                    </div>
+                    <hr style="margin:15px 0;">
+                    <h4>Direct Message to User</h4>
+                    <div class="form-group"><label for="admin-direct-message-text">Message Text:</label><textarea id="admin-direct-message-text" rows="2" placeholder="Optional message to send to user..."></textarea></div>
+
+                    <button type="submit" class="button button-full-width"><i class="fas fa-save"></i> Save User Changes</button>
+                </form>
+            </div>
+        </div>
+        
+                <!-- Admin Edit Plan Modal -->
+        <div id="adminEditPlanModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="adminEditPlanTitle"><i class="fas fa-edit"></i> Edit Investment Plan</h2>
+                    <button class="close-button" onclick="closeModal('adminEditPlanModal')">×</button>
+                </div>
+                <form id="admin-edit-plan-form">
+                    <input type="hidden" id="admin-edit-plan-id">
+                    <div class="form-group"><label for="admin-plan-name">Plan Name:</label><input type="text" id="admin-plan-name" required></div>
+                    <div class="form-group"><label for="admin-plan-minAmount">Min Amount (<span class="admin-plan-currency-symbol">$</span>):</label><input type="number" id="admin-plan-minAmount" required step="any"></div>
+                    <div class="form-group"><label for="admin-plan-maxAmount">Max Amount (<span class="admin-plan-currency-symbol">$</span>):</label><input type="number" id="admin-plan-maxAmount" required step="any"></div>
+
+                    <div class="form-group">
+                        <label for="admin-plan-isShortTerm">Is Short Term Plan?</label>
+                        <label class="switch" style="margin-left:0;"><input type="checkbox" id="admin-plan-isShortTerm"><span class="slider round"></span></label>
+                    </div>
+
+                    <!-- Fields for Long-Term Plan -->
+                    <div id="plan-fields-long-term-group" class="plan-fields-group">
+                        <h4>Long-Term Plan Settings</h4>
+                        <div class="form-group"><label for="admin-plan-durationDays-long">Duration Days (if long-term):</label><input type="number" id="admin-plan-durationDays-long" step="1" min="0"></div>
+                        <div class="form-group">
+                            <label for="admin-plan-dailyProfitPercent-long">Daily Profit % (if long-term):</label>
+                            <input type="number" id="admin-plan-dailyProfitPercent-long" step="0.001" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label for="admin-plan-dailyProfitFixed-long">Daily Profit Fixed Amount (if long-term) (<span class="admin-plan-currency-symbol">$</span>):</label>
+                            <input type="number" id="admin-plan-dailyProfitFixed-long" step="any" min="0">
+                            <small class="form-info">If set, this overrides Daily Profit %. Applied in global site currency.</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="admin-plan-totalProfitPercent-long">Total Profit % (if long-term):</label>
+                            <input type="number" id="admin-plan-totalProfitPercent-long" step="0.01" min="0">
+                            <small class="form-info">Primarily for reference if daily rates are used. Can be primary if daily rates are zero.</small>
+                        </div>
+                    </div>
+
+                    <!-- Fields for Short-Term Plan -->
+                    <div id="plan-fields-short-term-group" class="plan-fields-group">
+                        <h4>Short-Term Plan Settings</h4>
+                        <div class="form-group"><label for="admin-plan-durationDays-short">Duration Days (if short-term):</label><input type="number" id="admin-plan-durationDays-short" step="1" min="0"></div>
+                        <div class="form-group"><label for="admin-plan-durationMinutes-short">Duration Minutes (if short-term, adds to days):</label><input type="number" id="admin-plan-durationMinutes-short" step="1" min="0"></div>
+                         <div class="form-group">
+                            <label for="admin-plan-totalProfitPercent-short">Total Profit % (if short-term):</label>
+                            <input type="number" id="admin-plan-totalProfitPercent-short" step="0.01" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label for="admin-plan-dailyProfitPercent-short">Daily Profit % (if short-term, optional):</label>
+                            <input type="number" id="admin-plan-dailyProfitPercent-short" step="0.001" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label for="admin-plan-dailyProfitFixed-short">Daily Profit Fixed Amount (if short-term, optional) (<span class="admin-plan-currency-symbol">$</span>):</label>
+                            <input type="number" id="admin-plan-dailyProfitFixed-short" step="any" min="0">
+                            <small class="form-info">If set, this overrides Daily Profit %. Applied in global site currency. Less common for short-term total % plans.</small>
+                        </div>
+                    </div>
+
+                    <div class="form-group"><label for="admin-plan-description">Description:</label><textarea id="admin-plan-description" rows="3" required></textarea></div>
+                    <button type="submit" class="button button-full-width"><i class="fas fa-save"></i> Save Plan Changes</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Admin Edit Content Modal (for Features, Testimonials, FAQs) -->
+        <div id="adminEditContentModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="adminEditContentTitle"><i class="fas fa-feather-alt"></i> Edit Content</h2>
+                    <button class="close-button" onclick="closeModal('adminEditContentModal')">×</button>
+                </div>
+                <form id="admin-edit-content-form">
+                    <input type="hidden" id="admin-edit-content-id"><input type="hidden" id="admin-edit-content-type">
+                    <div id="admin-content-fields-container"></div>
+                    <button type="submit" class="button button-full-width"><i class="fas fa-save"></i> Save Content</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- User Support Ticket Modal -->
+        <div id="userSupportTicketModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="userSupportTicketTitle"><i class="fas fa-headset"></i> My Support Tickets</h2>
+                    <button class="close-button" onclick="closeModal('userSupportTicketModal')">×</button>
+                </div>
+                <div id="user-support-ticket-view">
+                    <!-- List of tickets or new ticket form -->
+                    <div id="user-existing-tickets-list" class="support-ticket-list" style="max-height:300px; overflow-y:auto; margin-bottom:20px;"></div>
+                    <button id="user-create-new-ticket-btn" type="button" class="button"><i class="fas fa-plus-circle"></i> Create New Ticket</button>
+                </div>
+                <div id="user-new-ticket-form-view" class="hidden">
+                    <h4>Create New Support Ticket</h4>
+                    <form id="user-new-ticket-form">
+                        <div class="form-group"><label for="user-ticket-subject">Subject:</label><input type="text" id="user-ticket-subject" required></div>
+                        <div class="form-group"><label for="user-ticket-message">Message:</label><textarea id="user-ticket-message" rows="4" required></textarea></div>
+                        <button type="submit" class="button"><i class="fas fa-paper-plane"></i> Send Ticket</button>
+                        <button type="button" class="button button-secondary" style="margin-left:10px;" id="user-cancel-new-ticket-btn"><i class="fas fa-times"></i> Cancel</button>
+                    </form>
+                </div>
+                <div id="user-ticket-chat-view" class="hidden">
+                    <h4 id="user-chat-ticket-subject">Ticket Subject</h4>
+                    <div id="user-ticket-chat-messages" class="support-chat-container"></div>
+                    <form id="user-reply-ticket-form">
+                        <input type="hidden" id="user-reply-ticket-id">
+                        <div class="form-group"><label for="user-ticket-reply-message">Your Reply:</label><textarea id="user-ticket-reply-message" rows="3" required></textarea></div>
+                        <button type="submit" class="button"><i class="fas fa-reply"></i> Send Reply</button>
+                        <button type="button" class="button button-secondary" style="margin-left:10px;" id="user-back-to-tickets-btn"><i class="fas fa-arrow-left"></i> Back to Tickets</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin View Support Ticket Modal -->
+        <div id="adminViewSupportTicketModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="adminViewSupportTicketTitle"><i class="fas fa-envelope-open-text"></i> View Support Ticket</h2>
+                    <button class="close-button" onclick="closeModal('adminViewSupportTicketModal')">×</button>
+                </div>
+                <p><strong>User:</strong> <span id="admin-ticket-user-info"></span></p>
+                <p><strong>Subject:</strong> <span id="admin-ticket-subject-info"></span></p>
+                <p><strong>Status:</strong> <span id="admin-ticket-status-info"></span></p>
+                <hr>
+                <div id="admin-ticket-chat-messages" class="support-chat-container"></div>
+                <form id="admin-reply-ticket-form" style="margin-top:15px;">
+                    <input type="hidden" id="admin-reply-ticket-id">
+                    <div class="form-group"><label for="admin-ticket-reply-message">Your Reply:</label><textarea id="admin-ticket-reply-message" rows="3" required></textarea></div>
+                    <div class="form-group">
+                        <label for="admin-ticket-change-status">Change Status:</label>
+                        <select id="admin-ticket-change-status">
+                            <option value="open">Open</option><option value="admin_reply">Admin Replied</option>
+                            <option value="user_reply">User Replied (Set automatically)</option><option value="closed">Closed</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="button"><i class="fas fa-reply"></i> Send Reply & Update Status</button>
+                </form>
+            </div>
+        </div>
+
+
+        <!-- Modals (Deposit, Withdrawal) -->
+        <div id="depositModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2><i class="fas fa-arrow-down"></i> Deposit Funds</h2>
+                    <button class="close-button" onclick="closeModal('depositModal')">×</button>
+                </div>
+                <form id="deposit-form">
+                    <div class="form-group">
+                        <label for="deposit-amount">Amount (<span class="currency-symbol-modal">$</span>):</label>
+                        <input type="number" id="deposit-amount" min="10" step="any" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="deposit-method">Payment Method:</label>
+                        <select id="deposit-method" required>
+                            <option value="">-- Select Method --</option><option value="bank">Bank Transfer</option>
+                            <option value="paypal">PayPal</option><option value="bitcoin">Bitcoin (BTC)</option>
+                        </select>
+                    </div>
+                    <div id="deposit-details-display" class="hidden"></div>
+                    <div class="form-group hidden" id="deposit-proof-group">
+                        <label for="deposit-proof">Upload Proof of Payment:</label>
+                        <input type="file" id="deposit-proof" accept="image/*,.pdf">
+                        <p class="form-info">Select a file. (File not actually uploaded for this platform).</p>
+                    </div>
+                    <button type="submit" class="button button-full-width"><i class="fas fa-check-circle"></i> Proceed with Deposit</button>
+                    <div id="deposit-loader" class="loader hidden" style="margin-top:15px;"></div>
+                    <div id="deposit-message" class="form-message hidden"></div>
+                </form>
+            </div>
+        </div>
+        <div id="withdrawalModal" class="modal">
+            <div class="modal-content">
+                 <div class="modal-header">
+                    <h2><i class="fas fa-arrow-up"></i> Request Withdrawal</h2>
+                    <button class="close-button" onclick="closeModal('withdrawalModal')">×</button>
+                </div>
+                <form id="withdrawal-form">
+                    <p style="margin-bottom:15px;">Available to Withdraw: <strong id="withdrawal-available-balance" style="color:var(--success-color);">$0.00</strong></p>
+                    <div id="withdrawal-limits-info">Min: $10, Max: $20,000</div>
+                    <div class="form-group">
+                        <label for="withdrawal-amount">Amount to Withdraw (<span class="currency-symbol-modal">$</span>):</label>
+                        <input type="number" id="withdrawal-amount" step="any" required>
+                    </div>
+                    <div id="withdrawal-fee-info">A 5% withdrawal fee will be applied.</div>
+                    <div class="form-group">
+                        <label for="withdrawal-method">Withdrawal Method:</label>
+                        <select id="withdrawal-method" required>
+                            <option value="">-- Select Method --</option><option value="bank">Bank Account</option>
+                            <option value="paypal">PayPal Email</option><option value="bitcoin">Bitcoin Address</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="withdrawal-details">Your Account/Address Details:</label>
+                        <textarea id="withdrawal-details" rows="3" placeholder="Enter your Bank Account Number, PayPal Email, or BTC Address" required></textarea>
+                    </div>
+                    <button type="submit" class="button button-full-width"><i class="fas fa-paper-plane"></i> Submit Withdrawal Request</button>
+                    <div id="withdrawal-loader" class="loader hidden" style="margin-top:15px;"></div>
+                    <div id="withdrawal-message" class="form-message hidden"></div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-links">
+                <a href="#">About <span class="app-name-dynamic">NFX</span></a><a href="#">Terms</a><a href="#">Privacy</a>
+                <a href="#" onclick="navigateToSection('faq', 'nav-faq')">FAQ</a>
+                <a href="#">Contact Us</a>
+            </div>
+            <div class="social-icons">
+                <a href="#" title="Facebook"><i class="fab fa-facebook-f"></i></a><a href="#" title="Twitter"><i class="fab fa-twitter"></i></a>
+                <a href="#" title="LinkedIn"><i class="fab fa-linkedin-in"></i></a><a href="#" title="Instagram"><i class="fab fa-instagram"></i></a>
+            </div>
+            <p>© <span id="current-year"></span> <span class="app-name-dynamic">NFX-Investor ProMax</span>. All Rights Reserved.</p>
+            <p>For Educational & Illustrative Purposes Only. No real financial transactions occur.</p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
