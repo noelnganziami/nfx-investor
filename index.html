@@ -13,15 +13,21 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- ADDED SUPABASE SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- END ADDED SUPABASE SDK -->
 </head>
 <body>
     <div id="toast-container"></div>
     <div id="maintenance-mode-banner" class="hidden">Site is currently undergoing maintenance. Please check back later.</div>
 
-    <header>
+       <header>
         <div class="header-container">
             <h1><a href="#" id="nav-home-logo"><i class="fas fa-chart-pie"></i> <span id="app-name-header">NFX-Investor ProMax</span></a></h1>
-            <nav>
+            <button id="mobile-menu-toggle" aria-label="Toggle Menu" aria-expanded="false">
+                <i class="fas fa-bars"></i>
+            </button>
+            <nav id="main-nav">
                 <ul>
                     <li><a href="#" id="nav-home" class="active"><i class="fas fa-home"></i> Home</a></li>
                     <li><a href="#" id="nav-plans"><i class="fas fa-clipboard-list"></i> Plans</a></li>
@@ -42,7 +48,7 @@
                         </div>
                     </li>
                     <li><a href="#" id="nav-logout" class="hidden user-nav admin-nav"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
-                    <li id="currency-selector-container-admin"> 
+                    <li id="currency-selector-container-admin">
                         <select id="currency-selector-admin" aria-label="Select Global Currency">
                         </select>
                     </li>
@@ -88,7 +94,7 @@
             <h2 class="section-title aos" data-aos="slide-in-right">Why Choose <span class="app-name-dynamic">NFX-Investor ProMax</span>?</h2>
             <p class="section-subtitle aos" data-aos="slide-in-left">Experience a new era of digital asset management. We offer cutting-edge tools, diverse plans, and a commitment to your financial success.</p>
             <div class="features-grid" id="features-grid-container">
-                <!-- Features will be rendered by JS, make sure to add aos classes in JS -->
+                <!-- Features will be rendered by JS -->
             </div>
         </section>
 
@@ -96,7 +102,7 @@
         <section id="testimonials-section" class="page-section alternate-bg page-section-group">
             <h2 class="section-title aos" data-aos="fade-up">Investor Success Stories</h2>
              <div class="testimonials-grid" id="testimonials-grid-container">
-                <!-- Testimonials will be rendered by JS, make sure to add aos classes in JS -->
+                <!-- Testimonials will be rendered by JS -->
             </div>
         </section>
 
@@ -221,13 +227,16 @@
                     <h3><i class="fas fa-user-cog"></i> Profile Settings</h3>
                     <form id="profile-settings-form">
                         <div class="form-group"><label for="profile-setting-name">Full Name:</label><input type="text" id="profile-setting-name" required></div>
-                        <div class="form-group"><label for="profile-setting-pic-url">Profile Picture URL:</label><input type="url" id="profile-setting-pic-url" placeholder="https://example.com/image.jpg"></div>
+                        <div class="form-group">
+                            <label for="profile-setting-pic-file">Profile Picture (PNG/JPG, max 1MB):</label>
+                            <input type="file" id="profile-setting-pic-file" accept="image/png, image/jpeg">
+                        </div>
                         <button type="submit" class="button button-small"><i class="fas fa-save"></i> Update Profile</button>
                     </form>
                     <hr style="margin: 15px 0;">
                     <form id="change-password-form">
-                        <h4>Change Password (Simulation)</h4>
-                        <div class="form-group"><label for="current-password">Current Password:</label><input type="password" id="current-password" required></div>
+                        <h4>Change Password</h4>
+                        <div class="form-group"><label for="current-password">Current Password (if changing):</label><input type="password" id="current-password"> <small>Leave current empty if using OAuth or first time password set.</small></div>
                         <div class="form-group"><label for="new-password">New Password:</label><input type="password" id="new-password" required minlength="6"></div>
                         <div class="form-group"><label for="confirm-new-password">Confirm New Password:</label><input type="password" id="confirm-new-password" required></div>
                         <button type="submit" class="button button-small"><i class="fas fa-key"></i> Change Password</button>
@@ -258,8 +267,25 @@
                             <span class="slider round"></span>
                         </label>
                         <span id="profile-2fa-status" style="margin-left:10px; font-style:italic;"></span>
+                        <div id="qr-code-container" class="hidden" style="margin-top:10px;">
+                            <p>Scan this QR code with your authenticator app:</p>
+                            <img id="qr-code-img" src="" alt="2FA QR Code">
+                            <p>Then enter the code to verify:</p>
+                            <input type="text" id="verify-2fa-code" placeholder="6-digit code">
+                            <button type="button" class="button button-small" onclick="verify2FAEnrollment()">Verify & Enable</button>
+                        </div>
                     </div>
-                     <p class="form-info" style="font-size:0.8rem; margin-top:5px;">(Password changes and actual 2FA are not implemented for this platform.)</p>
+                     <p class="form-info" style="font-size:0.8rem; margin-top:5px;">(Password changes are real. 2FA is a functional setup with Supabase Auth.)</p>
+                    <hr style="margin: 15px 0;">
+                    <!-- User Dark Mode Toggle -->
+                    <div class="form-group">
+                        <h4 style="margin-bottom: 10px;"><i class="fas fa-palette"></i> Theme Settings</h4>
+                        <label for="dark-mode-toggle-user" style="display:inline-block; margin-right: 10px;">Enable Dark Mode:</label>
+                        <label class="switch">
+                            <input type="checkbox" id="dark-mode-toggle-user">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
                 </div>
 
                  <div class="dashboard-card" id="user-support-card">
@@ -354,7 +380,8 @@
                         <div class="form-group">
                             <label for="admin-user-filter-status">Filter by Status:</label>
                             <select id="admin-user-filter-status">
-                                <option value="">All Statuses</option><option value="active">Active</option><option value="suspended">Suspended</option><option value="assistant_admin">Assistant Admin</option>
+                                <option value="">All Statuses</option><option value="active">Active</option><option value="suspended">Suspended</option>
+                                <option value="assistant_admin">Assistant Admin</option><option value="super_admin">Super Admin</option>
                             </select>
                         </div>
                         <button class="button button-small" id="admin-apply-user-filters"><i class="fas fa-filter"></i> Apply Filters</button>
@@ -426,6 +453,9 @@
             <div id="admin-planManagement-tab" class="admin-tab-content">
                 <div class="dashboard-card">
                     <h3><i class="fas fa-tasks-alt"></i> Investment Plan Management</h3>
+                    <div style="margin-bottom: 15px;">
+                         <button type="button" class="button button-small button-success" onclick="openAdminEditPlanModal(null)"><i class="fas fa-plus"></i> Add New Plan</button>
+                    </div>
                     <div id="admin-investment-plans-list"></div>
                 </div>
             </div>
@@ -460,7 +490,6 @@
                         <div><h4>User Registrations (Monthly)</h4><div class="chart-container"><canvas id="adminUserRegistrationChart"></canvas></div></div>
                         <div><h4>Transaction Overview (Approved)</h4><div class="chart-container"><canvas id="adminTransactionOverviewChart"></canvas></div></div>
                         <div><h4>Active Plan Popularity</h4><div class="chart-container"><canvas id="adminPlanPopularityChart"></canvas></div></div>
-                        <div><h4>Platform Value (Illustrative)</h4><div class="chart-container"><canvas id="adminPlatformValueChart"></canvas></div></div>
                         <div><h4>Transaction Volume by Type</h4><div class="chart-container"><canvas id="adminTransactionVolumeChart"></canvas></div></div>
                     </div>
                 </div>
@@ -479,12 +508,20 @@
                         <div class="form-group"><label for="admin-setting-stats-profit">Total Profit Base Amount (USD for calc):</label><input type="number" id="admin-setting-stats-profit" step="1000"></div>
                          <hr>
                         <h4>Financial Settings</h4>
+                         <div class="form-group">
+                            <label for="admin-setting-default-currency">Default Site Currency:</label>
+                            <select id="admin-setting-default-currency"></select>
+                        </div>
                         <div class="form-group"><label for="admin-setting-referral-bonus">Referral Bonus Amount (<span class="currency-symbol-admin">$</span>):</label><input type="number" id="admin-setting-referral-bonus" step="1"></div>
                         <div class="form-group"><label for="admin-setting-withdrawal-fee">Withdrawal Fee Percent (%):</label><input type="number" id="admin-setting-withdrawal-fee" step="0.1" min="0" max="100"></div>
                         <div class="form-group"><label for="admin-setting-min-withdrawal">Min Withdrawal Amount (Numeric value in global currency):</label><input type="number" id="admin-setting-min-withdrawal" step="1"></div>
                         <div class="form-group"><label for="admin-setting-max-withdrawal">Max Withdrawal Amount (Numeric value in global currency):</label><input type="number" id="admin-setting-max-withdrawal" step="100"></div>
                         <button type="submit" class="button"><i class="fas fa-save"></i> Save Global Settings</button>
                     </form>
+                 </div>
+                 <div class="dashboard-card admin-form-card">
+                    <h3><i class="fas fa-coins"></i> Manage Currencies <button type="button" class="button button-small button-success" style="float:right;" onclick="adminOpenCurrencyModal(null)"><i class="fas fa-plus"></i> Add Currency</button></h3>
+                    <div id="admin-currencies-list"></div>
                  </div>
                  <div class="dashboard-card admin-form-card">
                     <h3><i class="fas fa-bullhorn"></i> Broadcast Message to Users</h3>
@@ -509,6 +546,16 @@
                     </div>
                     <p class="form-info">When enabled, non-admin users will see a maintenance page and cannot log in or use the platform.</p>
                  </div>
+                <div class="dashboard-card admin-form-card">
+                    <h3><i class="fas fa-palette"></i> Theme Settings</h3>
+                    <div class="form-group">
+                        <label for="dark-mode-toggle-admin" style="display:inline-block; margin-right: 10px;">Enable Dark Mode:</label>
+                        <label class="switch">
+                            <input type="checkbox" id="dark-mode-toggle-admin">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                </div>
             </div>
 
             <!-- Admin System Log Tab -->
@@ -546,13 +593,13 @@
                     <input type="hidden" id="admin-edit-user-id">
                     <div class="form-group"><label for="admin-edit-user-name">Full Name:</label><input type="text" id="admin-edit-user-name" required></div>
                     <div class="form-group"><label for="admin-edit-user-email">Email Address:</label><input type="email" id="admin-edit-user-email" required>
-                        <p class="form-info warning-text" style="color:var(--accent-color);">Changing email affects login. Ensure user is informed.</p>
+                        <p class="form-info warning-text" style="color:var(--accent-color);">Changing email is not directly supported here (affects Auth user). Manage in Supabase Auth.</p>
                     </div>
                     <div class="form-group"><label for="admin-edit-user-password">New Password (optional):</label><input type="password" id="admin-edit-user-password" minlength="6" placeholder="Leave blank to keep current"></div>
                     <hr style="margin:15px 0;">
                     <h4>Wallet Actions</h4>
-                    <div class="form-group"><label for="admin-edit-user-credit">Add Credit Amount:</label><input type="number" id="admin-edit-user-credit" step="any" placeholder="0"></div>
-                    <div class="form-group"><label for="admin-edit-user-credit-reason">Credit Reason:</label><input type="text" id="admin-edit-user-credit-reason" placeholder="e.g., Manual Adjustment"></div>
+                    <div class="form-group"><label for="admin-edit-user-credit">Add/Subtract Wallet Balance:</label><input type="number" id="admin-edit-user-credit" step="any" placeholder="0 (use negative to subtract)"></div>
+                    <div class="form-group"><label for="admin-edit-user-credit-reason">Credit/Debit Reason:</label><input type="text" id="admin-edit-user-credit-reason" placeholder="e.g., Manual Adjustment"></div>
                     <div class="form-group"><label for="admin-edit-user-bonus">Add Bonus Amount:</label><input type="number" id="admin-edit-user-bonus" step="any" placeholder="0"></div>
                     <div class="form-group"><label for="admin-edit-user-bonus-reason">Bonus Reason:</label><input type="text" id="admin-edit-user-bonus-reason" placeholder="e.g., Promotional Bonus"></div>
                     <hr style="margin:15px 0;">
@@ -562,8 +609,12 @@
                         <label class="switch"><input type="checkbox" id="admin-edit-user-suspended"><span class="slider round"></span></label>
                     </div>
                      <div class="form-group">
-                        <label for="admin-edit-user-assistant">Assistant Admin Role:</label>
-                        <label class="switch"><input type="checkbox" id="admin-edit-user-assistant"><span class="slider round"></span></label>
+                        <label for="admin-edit-user-role">User Role:</label>
+                        <select id="admin-edit-user-role">
+                            <option value="user">User</option>
+                            <option value="assistant_admin">Assistant Admin</option>
+                            <option value="super_admin">Super Admin</option>
+                        </select>
                     </div>
                     <hr style="margin:15px 0;">
                     <h4>Direct Message to User</h4>
@@ -582,7 +633,7 @@
                     <button class="close-button" onclick="closeModal('adminEditPlanModal')">×</button>
                 </div>
                 <form id="admin-edit-plan-form">
-                    <input type="hidden" id="admin-edit-plan-id">
+                    <input type="hidden" id="admin-edit-plan-id"> <!-- For editing existing, empty for new -->
                     <div class="form-group"><label for="admin-plan-name">Plan Name:</label><input type="text" id="admin-plan-name" required></div>
                     <div class="form-group"><label for="admin-plan-minAmount">Min Amount (<span class="admin-plan-currency-symbol">$</span>):</label><input type="number" id="admin-plan-minAmount" required step="any"></div>
                     <div class="form-group"><label for="admin-plan-maxAmount">Max Amount (<span class="admin-plan-currency-symbol">$</span>):</label><input type="number" id="admin-plan-maxAmount" required step="any"></div>
@@ -653,6 +704,29 @@
             </div>
         </div>
 
+         <!-- Admin Manage Currency Modal -->
+        <div id="adminCurrencyModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="adminCurrencyModalTitle"><i class="fas fa-coins"></i> Manage Currency</h2>
+                    <button class="close-button" onclick="closeModal('adminCurrencyModal')">×</button>
+                </div>
+                <form id="admin-currency-form">
+                    <input type="hidden" id="admin-currency-original-code">
+                    <div class="form-group">
+                        <label for="admin-currency-code">Currency Code (e.g., USD, EUR):</label>
+                        <input type="text" id="admin-currency-code" maxlength="3" required placeholder="XYZ">
+                    </div>
+                    <div class="form-group">
+                        <label for="admin-currency-symbol">Currency Symbol (e.g., $, €):</label>
+                        <input type="text" id="admin-currency-symbol" maxlength="5" required placeholder="#">
+                    </div>
+                    <button type="submit" class="button button-full-width"><i class="fas fa-save"></i> Save Currency</button>
+                </form>
+            </div>
+        </div>
+
+
         <!-- User Support Ticket Modal -->
         <div id="userSupportTicketModal" class="modal">
             <div class="modal-content">
@@ -661,7 +735,6 @@
                     <button class="close-button" onclick="closeModal('userSupportTicketModal')">×</button>
                 </div>
                 <div id="user-support-ticket-view">
-                    <!-- List of tickets or new ticket form -->
                     <div id="user-existing-tickets-list" class="support-ticket-list" style="max-height:300px; overflow-y:auto; margin-bottom:20px;"></div>
                     <button id="user-create-new-ticket-btn" type="button" class="button"><i class="fas fa-plus-circle"></i> Create New Ticket</button>
                 </div>
@@ -715,7 +788,7 @@
         </div>
 
 
-        <!-- Modals (Deposit, Withdrawal) -->
+        <!-- Modals (Deposit, Withdrawal, Investment) -->
         <div id="depositModal" class="modal">
             <div class="modal-content">
                 <div class="modal-header">
@@ -738,7 +811,7 @@
                     <div class="form-group hidden" id="deposit-proof-group">
                         <label for="deposit-proof">Upload Proof of Payment:</label>
                         <input type="file" id="deposit-proof" accept="image/*,.pdf">
-                        <p class="form-info">Select a file. (File not actually uploaded for this platform).</p>
+                        <p class="form-info">Select a file. (File not actually uploaded for this platform simulation).</p>
                     </div>
                     <button type="submit" class="button button-full-width"><i class="fas fa-check-circle"></i> Proceed with Deposit</button>
                     <div id="deposit-loader" class="loader hidden" style="margin-top:15px;"></div>
@@ -777,6 +850,45 @@
                 </form>
             </div>
         </div>
+        
+        <!-- Custom Investment Amount Modal -->
+        <div id="investmentAmountModal" class="modal">
+            <div class="modal-content" style="max-width: 480px;">
+                <div class="modal-header">
+                    <h2 id="investmentAmountModalTitle"><i class="fas fa-hand-holding-usd"></i> Invest in Plan</h2>
+                    <button class="close-button" onclick="closeModal('investmentAmountModal')">×</button>
+                </div>
+                <form id="investment-amount-form">
+                    <input type="hidden" id="investment-modal-plan-id">
+                    <p id="investment-modal-info" style="margin-bottom: 15px;"></p>
+                    <div class="form-group">
+                        <label for="investment-modal-amount">Amount to Invest:</label>
+                        <input type="number" id="investment-modal-amount" step="any" required>
+                    </div>
+                    <div id="investment-modal-message" class="form-message hidden"></div>
+                    <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px; padding-top: 20px;">
+                        <button type="button" class="button button-small button-secondary" onclick="closeModal('investmentAmountModal')">Cancel</button>
+                        <button type="submit" class="button button-small">Confirm Investment</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+<!-- Custom Confirm Modal -->
+<div id="customConfirmModal" class="modal">
+    <div class="modal-content" style="max-width: 450px;">
+        <div class="modal-header">
+            <h2 id="customConfirmModalTitle">Confirmation</h2>
+        </div>
+        <div class="modal-body" style="padding: 20px 0;">
+            <p id="customConfirmModalMessage" style="font-size: 1.1rem; line-height: 1.6;"></p>
+        </div>
+        <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px; padding-top: 20px; border-top: 1px solid var(--border-color);">
+            <button id="customConfirmModalCancel" class="button button-small button-secondary">Cancel</button>
+            <button id="customConfirmModalOk" class="button button-small">OK</button>
+        </div>
+    </div>
+</div>
     </main>
 
     <footer>
@@ -791,10 +903,11 @@
                 <a href="#" title="LinkedIn"><i class="fab fa-linkedin-in"></i></a><a href="#" title="Instagram"><i class="fab fa-instagram"></i></a>
             </div>
             <p>© <span id="current-year"></span> <span class="app-name-dynamic">NFX-Investor ProMax</span>. All Rights Reserved.</p>
-            <p>For Educational & Illustrative Purposes Only. No real financial transactions occur.</p>
+            <p>This platform uses a simulated backend. For full functionality with Supabase, ensure backend tables and RLS are set up.</p>
         </div>
     </footer>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

@@ -1,602 +1,1060 @@
-// ⬇️ PASTE YOUR KEYS HERE ⬇️
-const SUPABASE_URL = 'https://bdmsledibaffqcbjnfhg.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJkbXNsZWRpYmFmZnFjYmpuZmhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk0MDI0MTksImV4cCI6MjA2NDk3ODQxOX0.OnnUTl-UPX-QgKLopc9YsmdpO7Y9cAi0bQwKB3JofWg';
-// ⬆️ PASTE YOUR KEYS HERE ⬆️
+// --- Supabase Configuration ---
+const SUPABASE_URL = 'https://wfhpslienpuszgcufxtu.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndmaHBzbGllbnB1c3pnY3VmeHR1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk0NjI3MjgsImV4cCI6MjA2NTAzODcyOH0.FICXvX1zHPiRIC_OSKrSB0DyPkshHKINlQQvh_YGGu8';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-const { createClient } = supabase;
-const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// --- Supabase Table Names ---
+const DB_TABLES = {
+    PROFILES: 'profiles', SITE_SETTINGS: 'site_settings', HERO_CONTENT: 'hero_content',
+    FEATURES: 'features', TESTIMONIALS: 'testimonials', FAQS: 'faqs',
+    INVESTMENT_PLANS: 'investment_plans', USER_INVESTMENTS: 'user_investments',
+    TRANSACTIONS: 'transactions', NOTIFICATIONS: 'notifications',
+    SUPPORT_TICKETS: 'support_tickets', SUPPORT_TICKET_MESSAGES: 'support_ticket_messages',
+    ADMIN_SYSTEM_LOG: 'admin_system_log', BROADCAST_MESSAGES: 'broadcast_messages',
+    CURRENCIES: 'currencies',
+};
 
-// --- GLOBAL STATE --- 
+// --- BASE CONFIGURATION (Defaults, used as fallback) ---
+const NFX_BASE_CONFIG = {
+    appName: "NFX-Investor ProMax",
+    adminCredentials: { email: "noelfx.ng@gmail.com" },
+    defaultCurrency: { code: "USD", symbol: "$" },
+    currencies: [ { code: "USD", symbol: "$" }, { code: "EUR", symbol: "€" }, { code: "GBP", symbol: "£" } ],
+    investmentPlans: [], 
+    siteStats: { users: "0+", investedBase: 0, profitBase: 0 },
+    heroContent: { headline: "Unlock Your Financial Potential.", subheadline: "Explore strategic investment opportunities." },
+    features: [], testimonials: [], faqs: [],
+    depositMethodsDetails: {
+        bank: "Bank Name: NFX Global Trust<br>Account Number: 123-456-7890<br>SWIFT/BIC: NFXGUS33<br>Reference: Your User ID",
+        paypal: "Send PayPal payment to: <strong>payments@nfx-investor.com</strong><br>Include your User ID in the notes.",
+        bitcoin: "Send BTC to the following address:<br><strong>1OfficialBTCAddressxxxxxxxxxxxxxx</strong><br>Ensure you send enough to cover network fees."
+    },
+    withdrawalFeePercent: 5, minWithdrawalAmount: 10, maxWithdrawalAmount: 20000,
+    referralBonusAmount: 10, maintenanceMode: false,
+};
+
+// --- DOM Element Cache ---
+const navLinks = {
+    homeLogo: document.getElementById('nav-home-logo'), home: document.getElementById('nav-home'),
+    plans: document.getElementById('nav-plans'), faq: document.getElementById('nav-faq'),
+    login: document.getElementById('nav-login'), register: document.getElementById('nav-register'),
+    dashboard: document.getElementById('nav-dashboard'), admin: document.getElementById('nav-admin'),
+    logout: document.getElementById('nav-logout')
+};
+const sections = {
+    home: [document.getElementById('hero-section-wrapper'), document.getElementById('home-content-section'), document.getElementById('testimonials-section')],
+    plans: document.getElementById('plans-section'), faq: document.getElementById('faq-section'),
+    login: document.getElementById('login-section'), register: document.getElementById('register-section'),
+    dashboard: document.getElementById('dashboard-section'), adminPanel: document.getElementById('admin-panel-section')
+};
+const forms = {
+    login: document.getElementById('login-form'), register: document.getElementById('register-form'),
+    financialGoal: document.getElementById('financial-goal-form'), adminBroadcast: document.getElementById('admin-broadcast-form'),
+    adminGlobalSettings: document.getElementById('admin-global-settings-form'), adminHeroContent: document.getElementById('admin-hero-content-form'),
+    adminEditPlan: document.getElementById('admin-edit-plan-form'), adminEditContent: document.getElementById('admin-edit-content-form'),
+    adminEditUser: document.getElementById('admin-edit-user-form'), userNewTicketForm: document.getElementById('user-new-ticket-form'),
+    userReplyTicketForm: document.getElementById('user-reply-ticket-form'), adminReplyTicketForm: document.getElementById('admin-reply-ticket-form'),
+    changePassword: document.getElementById('change-password-form'),
+    profileSettings: document.getElementById('profile-settings-form'),
+    adminCurrency: document.getElementById('admin-currency-form'),
+    investmentAmount: document.getElementById('investment-amount-form'),
+};
+const planDisplays = { public: document.getElementById('public-plans-display'), dashboard: document.getElementById('dashboard-plans-display') };
+const dashboardElements = {
+    broadcastBanner: document.getElementById('broadcast-message-banner'), broadcastText: document.getElementById('broadcast-message-text'),
+    welcome: document.getElementById('dashboard-welcome'), userName: document.getElementById('dash-user-name'),
+    userEmail: document.getElementById('dash-user-email'), memberSince: document.getElementById('dash-member-since'),
+    referralCode: document.getElementById('dash-referral-code'), referredByContainer: document.getElementById('dash-referred-by-container'),
+    referredBy: document.getElementById('dash-referred-by'), lastLogin: document.getElementById('dash-last-login'),
+    accountCurrency: document.getElementById('dash-account-currency'), walletActualBalance: document.getElementById('wallet-actual-balance'),
+    walletInvestedAmount: document.getElementById('wallet-invested-amount'), walletRealizedProfit: document.getElementById('wallet-realized-profit'),
+    withdrawalAvailableBalance: document.getElementById('withdrawal-available-balance'), activeInvestmentsSummaryCard: document.getElementById('active-investments-summary-card'),
+    activeInvestmentsList: document.getElementById('active-investments-list'), activeInvestmentsCount: document.getElementById('active-investments-count'),
+    noInvestmentMessage: document.getElementById('dashboard-no-investment'), investmentOptions: document.getElementById('dashboard-investment-options'),
+    transactionTableBody: document.getElementById('transaction-table-body'), noTransactionsMessage: document.getElementById('no-transactions'),
+    exportPdfButton: document.getElementById('export-pdf-button'), // *** NEW: For PDF Export ***
+    profileSettingsCard: document.getElementById('profile-settings-card'), financialGoalDisplay: document.getElementById('financial-goal-display'),
+    financialGoalTextDesc: document.getElementById('financial-goal-text-desc'), financialGoalTextAmount: document.getElementById('financial-goal-text-amount'),
+    financialGoalProgressFill: document.getElementById('financial-goal-progress-fill'), profitCalculatorCard: document.getElementById('profit-calculator-card'),
+    profitCalcPlanSelect: document.getElementById('profit-calc-plan-select'), profitCalcAmountInput: document.getElementById('profit-calc-amount'),
+    profitCalcButton: document.getElementById('profit-calc-button'), profitCalcResultsDisplay: document.getElementById('profit-calculator-results'),
+    profitCalcResultProfit: document.getElementById('profit-calc-result-profit'), profitCalcResultReturn: document.getElementById('profit-calc-result-return'),
+    profitCalcResultDuration: document.getElementById('profit-calc-result-duration'), profitCalcResultMaturity: document.getElementById('profit-calc-result-maturity'),
+    dashProfilePicPlaceholder: document.getElementById('dash-profile-pic-placeholder'), dashProfilePic: document.getElementById('dash-profile-pic'),
+    userSupportCard: document.getElementById('user-support-card'), userTicketListBrief: document.getElementById('user-ticket-list-brief'),
+    changePasswordMessage: document.getElementById('change-password-message'), 
+    profileSettingPicFile: document.getElementById('profile-setting-pic-file'),
+    withdrawalLimitsInfo: document.getElementById('withdrawal-limits-info'),
+    adminPanelTitle: document.getElementById('admin-panel-title'), adminGlobalStatsDisplay: document.getElementById('admin-global-stats-display'),
+    adminPendingDeposits: document.getElementById('admin-pending-deposits'), adminPendingDepositsCount: document.getElementById('admin-pending-deposits-count'),
+    adminPendingWithdrawals: document.getElementById('admin-pending-withdrawals'), adminPendingWithdrawalsCount: document.getElementById('admin-pending-withdrawals-count'),
+    adminUserListTableContainer: document.getElementById('admin-user-list-table-container'), adminNoUsersMessage: document.getElementById('admin-no-users-message'),
+    adminUserFilterName: document.getElementById('admin-user-filter-name'), adminUserFilterStatus: document.getElementById('admin-user-filter-status'),
+    adminApplyUserFiltersBtn: document.getElementById('admin-apply-user-filters'), adminClearUserFiltersBtn: document.getElementById('admin-clear-user-filters'),
+    adminViewUserModal: document.getElementById('adminViewUserModal'), adminViewUserTitle: document.getElementById('adminViewUserTitle'),
+    adminViewUserDetails: document.getElementById('adminViewUserDetails'), adminAllTransactionsTableBody: document.getElementById('admin-all-transactions-table-body'),
+    adminNoTransactionsMessage: document.getElementById('admin-no-transactions-message'), adminTxFilterUser: document.getElementById('admin-tx-filter-user'),
+    adminTxFilterType: document.getElementById('admin-tx-filter-type'), adminApplyTxFiltersBtn: document.getElementById('admin-apply-tx-filters'),
+    adminClearTxFiltersBtn: document.getElementById('admin-clear-tx-filters'), adminClearBroadcastBtn: document.getElementById('admin-clear-broadcast'),
+    adminHeroHeadlineInput: document.getElementById('admin-hero-headline'), adminHeroSubheadlineInput: document.getElementById('admin-hero-subheadline'),
+    adminFeaturesList: document.getElementById('admin-features-list'), adminTestimonialsList: document.getElementById('admin-testimonials-list'),
+    adminFaqsList: document.getElementById('admin-faqs-list'), adminEditContentModal: document.getElementById('adminEditContentModal'),
+    adminEditContentTitle: document.getElementById('adminEditContentTitle'), adminEditContentIdInput: document.getElementById('admin-edit-content-id'),
+    adminEditContentTypeInput: document.getElementById('admin-edit-content-type'), adminContentFieldsContainer: document.getElementById('admin-content-fields-container'),
+    adminInvestmentPlansList: document.getElementById('admin-investment-plans-list'), adminEditPlanModal: document.getElementById('adminEditPlanModal'),
+    adminEditPlanTitle: document.getElementById('adminEditPlanTitle'), adminEditPlanIdInput: document.getElementById('admin-edit-plan-id'),
+    adminSettingAppName: document.getElementById('admin-setting-app-name'), adminSettingStatsUsers: document.getElementById('admin-setting-stats-users'),
+    adminSettingStatsInvested: document.getElementById('admin-setting-stats-invested'), adminSettingStatsProfit: document.getElementById('admin-setting-stats-profit'),
+    adminSettingReferralBonus: document.getElementById('admin-setting-referral-bonus'), adminSettingWithdrawalFee: document.getElementById('admin-setting-withdrawal-fee'),
+    adminMaintenanceModeToggle: document.getElementById('admin-maintenance-mode-toggle'), adminMaintenanceModeStatus: document.getElementById('admin-maintenance-mode-status'),
+    adminAssistantBanner: document.getElementById('admin-assistant-banner'), adminEditUserModal: document.getElementById('adminEditUserModal'),
+    adminEditUserTitle: document.getElementById('adminEditUserTitle'), adminEditUserIdInput: document.getElementById('admin-edit-user-id'),
+    adminEditUserNameInput: document.getElementById('admin-edit-user-name'), adminEditUserEmailInput: document.getElementById('admin-edit-user-email'),
+    adminEditUserPasswordInput: document.getElementById('admin-edit-user-password'), adminEditUserCreditInput: document.getElementById('admin-edit-user-credit'),
+    adminEditUserCreditReasonInput: document.getElementById('admin-edit-user-credit-reason'), adminEditUserBonusInput: document.getElementById('admin-edit-user-bonus'),
+    adminEditUserBonusReasonInput: document.getElementById('admin-edit-user-bonus-reason'), adminEditUserSuspendedToggle: document.getElementById('admin-edit-user-suspended'),
+    adminEditUserRoleSelect: document.getElementById('admin-edit-user-role'), 
+    adminDirectMessageTextInput: document.getElementById('admin-direct-message-text'),
+    adminSystemLogList: document.getElementById('admin-system-log-list'), adminSettingMinWithdrawal: document.getElementById('admin-setting-min-withdrawal'),
+    adminSettingMaxWithdrawal: document.getElementById('admin-setting-max-withdrawal'), adminSupportTicketList: document.getElementById('admin-support-ticket-list'),
+    adminNoTicketsMessage: document.getElementById('admin-no-tickets-message'), adminTicketFilterUser: document.getElementById('admin-ticket-filter-user'),
+    adminTicketFilterStatus: document.getElementById('admin-ticket-filter-status'), adminApplyTicketFiltersBtn: document.getElementById('admin-apply-ticket-filters'),
+    adminClearTicketFiltersBtn: document.getElementById('admin-clear-ticket-filters'), adminViewSupportTicketModal: document.getElementById('adminViewSupportTicketModal'),
+    adminViewSupportTicketTitle: document.getElementById('adminViewSupportTicketTitle'), adminTicketUserInfo: document.getElementById('admin-ticket-user-info'),
+    adminTicketSubjectInfo: document.getElementById('admin-ticket-subject-info'), adminTicketStatusInfo: document.getElementById('admin-ticket-status-info'),
+    adminTicketChatMessages: document.getElementById('admin-ticket-chat-messages'), adminReplyTicketIdInput: document.getElementById('admin-reply-ticket-id'),
+    adminTicketReplyMessageInput: document.getElementById('admin-ticket-reply-message'), adminTicketChangeStatusSelect: document.getElementById('admin-ticket-change-status'),
+    userSupportTicketModal: document.getElementById('userSupportTicketModal'), userSupportTicketTitle: document.getElementById('userSupportTicketTitle'),
+    userSupportTicketView: document.getElementById('user-support-ticket-view'), userExistingTicketsList: document.getElementById('user-existing-tickets-list'),
+    userCreateNewTicketBtn: document.getElementById('user-create-new-ticket-btn'), userNewTicketFormView: document.getElementById('user-new-ticket-form-view'),
+    userTicketSubjectInput: document.getElementById('user-ticket-subject'), userTicketMessageInput: document.getElementById('user-ticket-message'),
+    userCancelNewTicketBtn: document.getElementById('user-cancel-new-ticket-btn'), userTicketChatView: document.getElementById('user-ticket-chat-view'),
+    userChatTicketSubject: document.getElementById('user-chat-ticket-subject'), userTicketChatMessages: document.getElementById('user-ticket-chat-messages'),
+    userReplyTicketIdInput: document.getElementById('user-reply-ticket-id'), userTicketReplyMessageInput: document.getElementById('user-ticket-reply-message'),
+    userBackToTicketsBtn: document.getElementById('user-back-to-tickets-btn'),
+    allPageContentWrappers: document.querySelectorAll('.page-section, .page-section-group'),
+    messageElements: { login: document.getElementById('login-message'), register: document.getElementById('register-message'), deposit: document.getElementById('deposit-message'), withdrawal: document.getElementById('withdrawal-message'), investmentModal: document.getElementById('investment-modal-message') },
+    depositModalEl: document.getElementById('depositModal'), withdrawalModalEl: document.getElementById('withdrawalModal'),
+    depositForm: document.getElementById('deposit-form'), withdrawalForm: document.getElementById('withdrawal-form'),
+    depositMethodSelect: document.getElementById('deposit-method'), depositDetailsDisplay: document.getElementById('deposit-details-display'),
+    depositProofGroup: document.getElementById('deposit-proof-group'), currencySelectorAdminContainer: document.getElementById('currency-selector-container-admin'),
+    currencySelectorAdmin: document.getElementById('currency-selector-admin'),
+    profile2FAToggle: document.getElementById('profile-2fa-toggle'), profile2FAStatus: document.getElementById('profile-2fa-status'),
+    appNameHeader: document.getElementById('app-name-header'), appNameDynamicElements: document.querySelectorAll('.app-name-dynamic'),
+    maintenanceModeBanner: document.getElementById('maintenance-mode-banner'), userNotificationBell: document.getElementById('user-notification-bell'),
+    notificationCountBadge: document.getElementById('notification-count-badge'), notificationsDropdownContainer: document.getElementById('notifications-dropdown-container'),
+    notificationsList: document.getElementById('notifications-list'),
+    heroHeadline: document.getElementById('hero-headline'),
+    heroSubheadline: document.getElementById('hero-subheadline'),
+    adminPlanIsShortTermToggle: document.getElementById('admin-plan-isShortTerm'),
+    planFieldsLongTermGroup: document.getElementById('plan-fields-long-term-group'),
+    planFieldsShortTermGroup: document.getElementById('plan-fields-short-term-group'),
+    adminPlanCurrencySymbols: null,
+    qrCodeContainer: document.getElementById('qr-code-container'),
+    qrCodeImg: document.getElementById('qr-code-img'),
+    verify2FACodeInput: document.getElementById('verify-2fa-code'),
+    adminSettingDefaultCurrencySelect: document.getElementById('admin-setting-default-currency'),
+    adminCurrenciesListDiv: document.getElementById('admin-currencies-list'),
+    adminCurrencyModalEl: document.getElementById('adminCurrencyModal'),
+    adminCurrencyModalTitle: document.getElementById('adminCurrencyModalTitle'),
+    adminCurrencyOriginalCodeInput: document.getElementById('admin-currency-original-code'),
+    adminCurrencyCodeInput: document.getElementById('admin-currency-code'),
+    adminCurrencySymbolInput: document.getElementById('admin-currency-symbol'),
+};
+
+// --- State Variables ---
+let NFX_CONFIG = { ...NFX_BASE_CONFIG };
 let currentUser = null;
-let NFX_CONFIG = {};
-let countdownIntervals = {};
-let animationObserver = null;
-
-// Chart instances
 let accountGrowthChartInstance = null;
+let countdownIntervals = {};
 let adminUserRegistrationChartInstance = null;
 let adminTransactionOverviewChartInstance = null;
 let adminPlanPopularityChartInstance = null;
-let adminPlatformValueChartInstance = null;
 let adminTransactionVolumeChartInstance = null;
+let animationObserver = null; 
+let currentAdminUserListCache = [];
+let customConfirmResolve = null; // For custom confirm modal
 
-// --- ELEMENT SELECTORS (Unchanged from your original file) ---
-const navLinks = { homeLogo: document.getElementById('nav-home-logo'), home: document.getElementById('nav-home'), plans: document.getElementById('nav-plans'), faq: document.getElementById('nav-faq'), login: document.getElementById('nav-login'), register: document.getElementById('nav-register'), dashboard: document.getElementById('nav-dashboard'), admin: document.getElementById('nav-admin'), logout: document.getElementById('nav-logout') };
-const sections = { home: [document.getElementById('hero-section-wrapper'), document.getElementById('home-content-section'), document.getElementById('testimonials-section')], plans: document.getElementById('plans-section'), faq: document.getElementById('faq-section'), login: document.getElementById('login-section'), register: document.getElementById('register-section'), dashboard: document.getElementById('dashboard-section'), adminPanel: document.getElementById('admin-panel-section') };
-const forms = { login: document.getElementById('login-form'), register: document.getElementById('register-form'), financialGoal: document.getElementById('financial-goal-form'), adminBroadcast: document.getElementById('admin-broadcast-form'), adminGlobalSettings: document.getElementById('admin-global-settings-form'), adminHeroContent: document.getElementById('admin-hero-content-form'), adminEditPlan: document.getElementById('admin-edit-plan-form'), adminEditContent: document.getElementById('admin-edit-content-form'), adminEditUser: document.getElementById('admin-edit-user-form'), userNewTicketForm: document.getElementById('user-new-ticket-form'), userReplyTicketForm: document.getElementById('user-reply-ticket-form'), adminReplyTicketForm: document.getElementById('admin-reply-ticket-form'), changePassword: document.getElementById('change-password-form') };
-const planDisplays = { public: document.getElementById('public-plans-display'), dashboard: document.getElementById('dashboard-plans-display') };
-const dashboardElements = { broadcastBanner: document.getElementById('broadcast-message-banner'), broadcastText: document.getElementById('broadcast-message-text'), welcome: document.getElementById('dashboard-welcome'), userName: document.getElementById('dash-user-name'), userEmail: document.getElementById('dash-user-email'), memberSince: document.getElementById('dash-member-since'), referralCode: document.getElementById('dash-referral-code'), referredByContainer: document.getElementById('dash-referred-by-container'), referredBy: document.getElementById('dash-referred-by'), lastLogin: document.getElementById('dash-last-login'), accountCurrency: document.getElementById('dash-account-currency'), walletActualBalance: document.getElementById('wallet-actual-balance'), walletInvestedAmount: document.getElementById('wallet-invested-amount'), walletRealizedProfit: document.getElementById('wallet-realized-profit'), withdrawalAvailableBalance: document.getElementById('withdrawal-available-balance'), activeInvestmentsSummaryCard: document.getElementById('active-investments-summary-card'), activeInvestmentsList: document.getElementById('active-investments-list'), activeInvestmentsCount: document.getElementById('active-investments-count'), noInvestmentMessage: document.getElementById('dashboard-no-investment'), investmentOptions: document.getElementById('dashboard-investment-options'), transactionTableBody: document.getElementById('transaction-table-body'), noTransactionsMessage: document.getElementById('no-transactions'), profileSettingsCard: document.getElementById('profile-settings-card'), financialGoalDisplay: document.getElementById('financial-goal-display'), financialGoalTextDesc: document.getElementById('financial-goal-text-desc'), financialGoalTextAmount: document.getElementById('financial-goal-text-amount'), financialGoalProgressFill: document.getElementById('financial-goal-progress-fill'), profitCalculatorCard: document.getElementById('profit-calculator-card'), profitCalcPlanSelect: document.getElementById('profit-calc-plan-select'), profitCalcAmountInput: document.getElementById('profit-calc-amount'), profitCalcButton: document.getElementById('profit-calc-button'), profitCalcResultsDisplay: document.getElementById('profit-calculator-results'), profitCalcResultProfit: document.getElementById('profit-calc-result-profit'), profitCalcResultReturn: document.getElementById('profit-calc-result-return'), profitCalcResultDuration: document.getElementById('profit-calc-result-duration'), profitCalcResultMaturity: document.getElementById('profit-calc-result-maturity'), dashProfilePicPlaceholder: document.getElementById('dash-profile-pic-placeholder'), dashProfilePic: document.getElementById('dash-profile-pic'), userSupportCard: document.getElementById('user-support-card'), userTicketListBrief: document.getElementById('user-ticket-list-brief'), changePasswordMessage: document.getElementById('change-password-message'), profileSettingPicUrlInput: document.getElementById('profile-setting-pic-url'), withdrawalLimitsInfo: document.getElementById('withdrawal-limits-info'), adminPanelTitle: document.getElementById('admin-panel-title'), adminGlobalStatsDisplay: document.getElementById('admin-global-stats-display'), adminPendingDeposits: document.getElementById('admin-pending-deposits'), adminPendingDepositsCount: document.getElementById('admin-pending-deposits-count'), adminPendingWithdrawals: document.getElementById('admin-pending-withdrawals'), adminPendingWithdrawalsCount: document.getElementById('admin-pending-withdrawals-count'), adminUserListTableContainer: document.getElementById('admin-user-list-table-container'), adminNoUsersMessage: document.getElementById('admin-no-users-message'), adminUserFilterName: document.getElementById('admin-user-filter-name'), adminUserFilterStatus: document.getElementById('admin-user-filter-status'), adminApplyUserFiltersBtn: document.getElementById('admin-apply-user-filters'), adminClearUserFiltersBtn: document.getElementById('admin-clear-user-filters'), adminViewUserModal: document.getElementById('adminViewUserModal'), adminViewUserTitle: document.getElementById('adminViewUserTitle'), adminViewUserDetails: document.getElementById('adminViewUserDetails'), adminAllTransactionsTableBody: document.getElementById('admin-all-transactions-table-body'), adminNoTransactionsMessage: document.getElementById('admin-no-transactions-message'), adminTxFilterUser: document.getElementById('admin-tx-filter-user'), adminTxFilterType: document.getElementById('admin-tx-filter-type'), adminApplyTxFiltersBtn: document.getElementById('admin-apply-tx-filters'), adminClearTxFiltersBtn: document.getElementById('admin-clear-tx-filters'), adminClearBroadcastBtn: document.getElementById('admin-clear-broadcast'), adminHeroHeadlineInput: document.getElementById('admin-hero-headline'), adminHeroSubheadlineInput: document.getElementById('admin-hero-subheadline'), adminFeaturesList: document.getElementById('admin-features-list'), adminTestimonialsList: document.getElementById('admin-testimonials-list'), adminFaqsList: document.getElementById('admin-faqs-list'), adminEditContentModal: document.getElementById('adminEditContentModal'), adminEditContentTitle: document.getElementById('adminEditContentTitle'), adminEditContentIdInput: document.getElementById('admin-edit-content-id'), adminEditContentTypeInput: document.getElementById('admin-edit-content-type'), adminContentFieldsContainer: document.getElementById('admin-content-fields-container'), adminInvestmentPlansList: document.getElementById('admin-investment-plans-list'), adminEditPlanModal: document.getElementById('adminEditPlanModal'), adminEditPlanTitle: document.getElementById('adminEditPlanTitle'), adminEditPlanIdInput: document.getElementById('admin-edit-plan-id'), adminSettingAppName: document.getElementById('admin-setting-app-name'), adminSettingStatsUsers: document.getElementById('admin-setting-stats-users'), adminSettingStatsInvested: document.getElementById('admin-setting-stats-invested'), adminSettingStatsProfit: document.getElementById('admin-setting-stats-profit'), adminSettingReferralBonus: document.getElementById('admin-setting-referral-bonus'), adminSettingWithdrawalFee: document.getElementById('admin-setting-withdrawal-fee'), adminMaintenanceModeToggle: document.getElementById('admin-maintenance-mode-toggle'), adminMaintenanceModeStatus: document.getElementById('admin-maintenance-mode-status'), adminAssistantBanner: document.getElementById('admin-assistant-banner'), adminEditUserModal: document.getElementById('adminEditUserModal'), adminEditUserTitle: document.getElementById('adminEditUserTitle'), adminEditUserIdInput: document.getElementById('admin-edit-user-id'), adminEditUserNameInput: document.getElementById('admin-edit-user-name'), adminEditUserEmailInput: document.getElementById('admin-edit-user-email'), adminEditUserPasswordInput: document.getElementById('admin-edit-user-password'), adminEditUserCreditInput: document.getElementById('admin-edit-user-credit'), adminEditUserCreditReasonInput: document.getElementById('admin-edit-user-credit-reason'), adminEditUserBonusInput: document.getElementById('admin-edit-user-bonus'), adminEditUserBonusReasonInput: document.getElementById('admin-edit-user-bonus-reason'), adminEditUserSuspendedToggle: document.getElementById('admin-edit-user-suspended'), adminEditUserAssistantToggle: document.getElementById('admin-edit-user-assistant'), adminDirectMessageTextInput: document.getElementById('admin-direct-message-text'), adminSystemLogList: document.getElementById('admin-system-log-list'), adminSettingMinWithdrawal: document.getElementById('admin-setting-min-withdrawal'), adminSettingMaxWithdrawal: document.getElementById('admin-setting-max-withdrawal'), adminSupportTicketList: document.getElementById('admin-support-ticket-list'), adminNoTicketsMessage: document.getElementById('admin-no-tickets-message'), adminTicketFilterUser: document.getElementById('admin-ticket-filter-user'), adminTicketFilterStatus: document.getElementById('admin-ticket-filter-status'), adminApplyTicketFiltersBtn: document.getElementById('admin-apply-ticket-filters'), adminClearTicketFiltersBtn: document.getElementById('admin-clear-ticket-filters'), adminViewSupportTicketModal: document.getElementById('adminViewSupportTicketModal'), adminViewSupportTicketTitle: document.getElementById('adminViewSupportTicketTitle'), adminTicketUserInfo: document.getElementById('admin-ticket-user-info'), adminTicketSubjectInfo: document.getElementById('admin-ticket-subject-info'), adminTicketStatusInfo: document.getElementById('admin-ticket-status-info'), adminTicketChatMessages: document.getElementById('admin-ticket-chat-messages'), adminReplyTicketIdInput: document.getElementById('admin-reply-ticket-id'), adminTicketReplyMessageInput: document.getElementById('admin-ticket-reply-message'), adminTicketChangeStatusSelect: document.getElementById('admin-ticket-change-status'), userSupportTicketModal: document.getElementById('userSupportTicketModal'), userSupportTicketTitle: document.getElementById('userSupportTicketTitle'), userSupportTicketView: document.getElementById('user-support-ticket-view'), userExistingTicketsList: document.getElementById('user-existing-tickets-list'), userCreateNewTicketBtn: document.getElementById('user-create-new-ticket-btn'), userNewTicketFormView: document.getElementById('user-new-ticket-form-view'), userTicketSubjectInput: document.getElementById('user-ticket-subject'), userTicketMessageInput: document.getElementById('user-ticket-message'), userCancelNewTicketBtn: document.getElementById('user-cancel-new-ticket-btn'), userTicketChatView: document.getElementById('user-ticket-chat-view'), userChatTicketSubject: document.getElementById('user-chat-ticket-subject'), userTicketChatMessages: document.getElementById('user-ticket-chat-messages'), userReplyTicketIdInput: document.getElementById('user-reply-ticket-id'), userTicketReplyMessageInput: document.getElementById('user-ticket-reply-message'), userBackToTicketsBtn: document.getElementById('user-back-to-tickets-btn'), allPageContentWrappers: document.querySelectorAll('.page-section, .page-section-group'), messageElements: { login: document.getElementById('login-message'), register: document.getElementById('register-message'), deposit: document.getElementById('deposit-message'), withdrawal: document.getElementById('withdrawal-message') }, depositModalEl: document.getElementById('depositModal'), withdrawalModalEl: document.getElementById('withdrawalModal'), depositForm: document.getElementById('deposit-form'), withdrawalForm: document.getElementById('withdrawal-form'), depositMethodSelect: document.getElementById('deposit-method'), depositDetailsDisplay: document.getElementById('deposit-details-display'), depositProofGroup: document.getElementById('deposit-proof-group'), currencySelectorAdminContainer: document.getElementById('currency-selector-container-admin'), currencySelectorAdmin: document.getElementById('currency-selector-admin'), profileSettingsForm: document.getElementById('profile-settings-form'), profile2FAToggle: document.getElementById('profile-2fa-toggle'), profile2FAStatus: document.getElementById('profile-2fa-status'), appNameHeader: document.getElementById('app-name-header'), appNameDynamicElements: document.querySelectorAll('.app-name-dynamic'), maintenanceModeBanner: document.getElementById('maintenance-mode-banner'), userNotificationBell: document.getElementById('user-notification-bell'), notificationCountBadge: document.getElementById('notification-count-badge'), notificationsDropdownContainer: document.getElementById('notifications-dropdown-container'), notificationsList: document.getElementById('notifications-list'), heroHeadline: document.getElementById('hero-headline'), heroSubheadline: document.getElementById('hero-subheadline'), adminPlanIsShortTermToggle: document.getElementById('admin-plan-isShortTerm'), planFieldsLongTermGroup: document.getElementById('plan-fields-long-term-group'), planFieldsShortTermGroup: document.getElementById('plan-fields-short-term-group'), adminPlanCurrencySymbols: document.querySelectorAll('.admin-plan-currency-symbol') };
+// ##################################################################
+// ################      UTILITY & HELPER FUNCTIONS      ############
+// ##################################################################
 
-// --- AUTHENTICATION & SESSION MANAGEMENT ---
-supabaseClient.auth.onAuthStateChange(async (event, session) => {
-    if (event === 'SIGNED_OUT') {
-        currentUser = null;
-        updateNavForLogoutState();
-        navigateToSection('home', 'nav-home');
-        return;
-    }
-
-    if (session) {
-        const user = session.user;
-        const { data: profile, error } = await supabaseClient.from('profiles').select('*').eq('id', user.id).single();
-
-        if (error || !profile) {
-            console.error("Error fetching profile, or profile not found:", error);
-            await handleLogout();
-            return;
-        }
-
-        currentUser = { ...user, ...profile };
-
-        if (NFX_CONFIG.maintenance_mode && currentUser.role !== 'admin') {
-            showToast("Site is under maintenance. Please try again later.", "warning", 5000);
-            await handleLogout();
-            return;
-        }
-
-        updateNavForLoginState();
-        if (currentUser.role === 'admin' || currentUser.role === 'assistant_admin') {
-            loadAdminPanel();
-        } else {
-            loadDashboard();
-        }
-    }
-});
-
-// --- DATA LOADING & CONFIG ---
-// REPLACEMENT for loadAndApplyConfig
-async function loadAndApplyConfig() {
+async function adminAddSystemLog(action_text, details = '', target_user_id = null) {
+    if (!currentUser || !currentUser.authUser) { console.warn("Cannot add system log: no current user."); return; }
+    const adminUserIdToLog = (currentUser.profile && ['super_admin', 'assistant_admin'].includes(currentUser.profile.role)) 
+                        ? currentUser.authUser.id : null;
+    if (!adminUserIdToLog) { console.warn("Cannot add system log: current user is not an admin."); return; }
     try {
-        // Fetch all public data in parallel using simpler, separate queries
-        const [
-            siteConfigResult,
-            plansResult,
-            faqsResult,
-            featuresResult,
-            testimonialsResult
-        ] = await Promise.all([
-            supabaseClient.from('site_config').select('*').eq('id', 1).single(),
-            supabaseClient.from('investment_plans').select('*'),
-            supabaseClient.from('faqs').select('*'),
-            supabaseClient.from('features').select('*'),
-            supabaseClient.from('testimonials').select('*')
-        ]);
+        const logEntry = { admin_user_id: adminUserIdToLog, admin_email: currentUser.authUser.email, action_text: action_text, details: details, target_user_id: target_user_id };
+        const { error } = await supabase.from(DB_TABLES.ADMIN_SYSTEM_LOG).insert(logEntry);
+        if (error) console.error("Failed to add system log:", error.message);
+    } catch (e) { console.error("Exception in adminAddSystemLog:", e.message); }
+}
 
-        // Check if any of the essential requests failed
-        if (siteConfigResult.error) throw siteConfigResult.error;
+function mapDbPlanToAppPlan(dbPlan) {
+    return {
+        id: dbPlan.id, name: dbPlan.name, minAmount: dbPlan.min_amount, maxAmount: dbPlan.max_amount,
+        isEnabled: dbPlan.is_enabled, isShortTerm: dbPlan.is_short_term, description: dbPlan.description,
+        durationDaysLongTerm: dbPlan.duration_days_long_term, dailyProfitPercentLongTerm: dbPlan.daily_profit_percent_long_term,
+        dailyProfitFixedLongTerm: dbPlan.daily_profit_fixed_long_term, totalProfitPercentLongTerm: dbPlan.total_profit_percent_long_term,
+        durationDaysShortTerm: dbPlan.duration_days_short_term, durationMinutesShortTerm: dbPlan.duration_minutes_short_term,
+        totalProfitPercentShortTerm: dbPlan.total_profit_percent_short_term, dailyProfitPercentShortTerm: dbPlan.daily_profit_percent_short_term,
+        dailyProfitFixedShortTerm: dbPlan.daily_profit_fixed_short_term,
+    };
+}
+function mapAppPlanToDbPlan(appPlan) {
+     return { 
+        name: appPlan.name, min_amount: appPlan.minAmount, max_amount: appPlan.maxAmount,
+        is_enabled: appPlan.isEnabled, is_short_term: appPlan.isShortTerm, description: appPlan.description,
+        duration_days_long_term: appPlan.durationDaysLongTerm || 0, daily_profit_percent_long_term: appPlan.dailyProfitPercentLongTerm || 0,
+        daily_profit_fixed_long_term: appPlan.dailyProfitFixedLongTerm || 0, total_profit_percent_long_term: appPlan.totalProfitPercentLongTerm || 0,
+        duration_days_short_term: appPlan.durationDaysShortTerm || 0, duration_minutes_short_term: appPlan.durationMinutesShortTerm || 0,
+        total_profit_percent_short_term: appPlan.totalProfitPercentShortTerm || 0, daily_profit_percent_short_term: appPlan.dailyProfitPercentShortTerm || 0,
+        daily_profit_fixed_short_term: appPlan.dailyProfitFixedShortTerm || 0,
+    };
+}
 
-        // Populate the global config object
+async function loadEffectiveConfig() {
+    let siteSettings = {}; let heroData = null; let featuresData = [];
+    let testimonialsData = []; let faqsData = []; let investmentPlansData = [];
+    let currenciesData = []; let activeBroadcastMessageContent = null; 
+    try {
+        const queries = [
+            supabase.from(DB_TABLES.SITE_SETTINGS).select('*').limit(1).single(),
+            supabase.from(DB_TABLES.HERO_CONTENT).select('*').limit(1).single(),
+            supabase.from(DB_TABLES.FEATURES).select('*').order('display_order', { ascending: true }),
+            supabase.from(DB_TABLES.TESTIMONIALS).select('*').order('display_order', { ascending: true }),
+            supabase.from(DB_TABLES.FAQS).select('*').order('display_order', { ascending: true }),
+            supabase.from(DB_TABLES.INVESTMENT_PLANS).select('*').order('min_amount', { ascending: true }),
+            supabase.from(DB_TABLES.CURRENCIES).select('*').order('code'),
+            supabase.from(DB_TABLES.BROADCAST_MESSAGES).select('*').eq('is_active', true).order('created_at', { ascending: false }).limit(1)
+        ];
+        const results = await Promise.all(queries);
+        const [ settingsResponse, heroResponse, featuresResponse, testimonialsResponse, faqsResponse, investmentPlansResponse, currenciesResponse, broadcastResponse ] = results;
+
+        if (settingsResponse.error && settingsResponse.error.code !== 'PGRST116') console.warn("Error fetching site_settings:", settingsResponse.error.message);
+        siteSettings = settingsResponse.data || {};
+        if (heroResponse.error && heroResponse.error.code !== 'PGRST116') console.warn("Error fetching hero_content:", heroResponse.error.message);
+        heroData = heroResponse.data;
+        if (featuresResponse.error) console.warn("Error fetching features:", featuresResponse.error.message);
+        featuresData = featuresResponse.data || [];
+        if (testimonialsResponse.error) console.warn("Error fetching testimonials:", testimonialsResponse.error.message);
+        testimonialsData = testimonialsResponse.data || [];
+        if (faqsResponse.error) console.warn("Error fetching faqs:", faqsResponse.error.message);
+        faqsData = faqsResponse.data || [];
+        if (investmentPlansResponse.error) console.warn("Error fetching investment_plans:", investmentPlansResponse.error.message);
+        investmentPlansData = investmentPlansResponse.data || [];
+        if (currenciesResponse.error) console.warn("Error fetching currencies:", currenciesResponse.error.message);
+        currenciesData = currenciesResponse.data || [];
+        if (broadcastResponse.error && broadcastResponse.error.code !== 'PGRST116') { console.warn("Error fetching active broadcast message:", broadcastResponse.error.message); } 
+        else if (broadcastResponse.data && broadcastResponse.data.length > 0) { activeBroadcastMessageContent = broadcastResponse.data[0]; }
+
         NFX_CONFIG = {
-            // Set some defaults
-            currencies: [{ code: "USD", symbol: "$" }, { code: "EUR", symbol: "€" }],
-            heroContent: { headline: "Unlock Your Financial Potential", subheadline: "Invest with Insight." },
-            // Overwrite with data from the database
-            ...siteConfigResult.data,
-            investment_plans: plansResult.data || [],
-            faqs: faqsResult.data || [],
-            features: featuresResult.data || [],
-            testimonials: testimonialsResult.data || [],
+            ...NFX_BASE_CONFIG, appName: siteSettings.app_name || NFX_BASE_CONFIG.appName,
+            defaultCurrency: siteSettings.default_currency ? siteSettings.default_currency : NFX_BASE_CONFIG.defaultCurrency,
+            currencies: (currenciesData && currenciesData.length > 0) ? currenciesData.map(c => ({ code: c.code, symbol: c.symbol })) : NFX_BASE_CONFIG.currencies,
+            investmentPlans: (investmentPlansData && investmentPlansData.length > 0) ? investmentPlansData.map(mapDbPlanToAppPlan) : NFX_BASE_CONFIG.investmentPlans.map(p => ({ ...p })),
+            siteStats: siteSettings.site_stats ? siteSettings.site_stats : NFX_BASE_CONFIG.siteStats,
+            heroContent: heroData ? { headline: heroData.headline, subheadline: heroData.subheadline } : NFX_BASE_CONFIG.heroContent,
+            features: (featuresData && featuresData.length > 0) ? featuresData.map(f => ({id: f.id, iconClass: f.icon_class, title: f.title, description: f.description})) : NFX_BASE_CONFIG.features,
+            testimonials: (testimonialsData && testimonialsData.length > 0) ? testimonialsData.map(t => ({id: t.id, quote: t.quote, author: t.author, role: t.role, avatar: t.avatar_url})) : NFX_BASE_CONFIG.testimonials,
+            faqs: (faqsData && faqsData.length > 0) ? faqsData.map(f => ({id: f.id, q: f.question, a: f.answer})) : NFX_BASE_CONFIG.faqs,
+            withdrawalFeePercent: parseFloat(siteSettings.withdrawal_fee_percent) || NFX_BASE_CONFIG.withdrawalFeePercent,
+            minWithdrawalAmount: parseFloat(siteSettings.min_withdrawal_amount) || NFX_BASE_CONFIG.minWithdrawalAmount,
+            maxWithdrawalAmount: parseFloat(siteSettings.max_withdrawal_amount) || NFX_BASE_CONFIG.maxWithdrawalAmount,
+            referralBonusAmount: parseFloat(siteSettings.referral_bonus_amount) || NFX_BASE_CONFIG.referralBonusAmount,
+            maintenanceMode: typeof siteSettings.maintenance_mode === 'boolean' ? siteSettings.maintenance_mode : NFX_BASE_CONFIG.maintenanceMode,
+            activeBroadcastMessage: activeBroadcastMessageContent ? { text: activeBroadcastMessageContent.message_text, timestamp: activeBroadcastMessageContent.created_at } : null,
         };
-        
-        // Update the user interface with the loaded data
-        updateUIFromConfig();
-
-    } catch (error) {
-        console.error("FATAL: Could not load site configuration from database.", error);
-        document.body.innerHTML = '<h1>Error: Could not connect to application services. Please try again later.</h1>';
-    }
-}
-
-function updateUIFromConfig() {
-    document.title = `${NFX_CONFIG.app_name} - Advanced Investment Platform`;
-    if (dashboardElements.appNameHeader) dashboardElements.appNameHeader.textContent = NFX_CONFIG.app_name;
-    dashboardElements.appNameDynamicElements.forEach(el => el.textContent = NFX_CONFIG.app_name);
-    dashboardElements.maintenanceModeBanner.classList.toggle('hidden', !NFX_CONFIG.maintenance_mode);
-
-    renderHeroContent();
-    renderFeatures();
-    renderTestimonials();
-    renderFAQs();
-    updateStatsBar();
-
+    } catch (error) { console.error("Critical error in loadEffectiveConfig structure:", error); window.showToast("Error loading site configuration. Using defaults.", "error"); NFX_CONFIG = { ...NFX_BASE_CONFIG }; }
+    if (dashboardElements.appNameHeader) dashboardElements.appNameHeader.textContent = NFX_CONFIG.appName;
+    dashboardElements.appNameDynamicElements.forEach(el => el.textContent = NFX_CONFIG.appName);
+    document.title = `${NFX_CONFIG.appName} - Advanced Investment Platform`;
     const withdrawalFeeInfoEl = document.getElementById('withdrawal-fee-info');
-    if (withdrawalFeeInfoEl) withdrawalFeeInfoEl.textContent = `A ${NFX_CONFIG.withdrawal_fee_percent}% withdrawal fee will be applied.`;
-    updateWithdrawalLimitsDisplay();
-}
-
-// --- AUTHENTICATION FORMS ---
-if (forms.register) forms.register.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const name = document.getElementById('register-name').value.trim();
-    const email = document.getElementById('register-email').value.trim();
-    const password = document.getElementById('register-password').value;
-    const referralCodeInput = document.getElementById('register-referral-code').value.trim();
-    if (!name || !email || !password || password.length < 6) {
-        return displayFormMessage(dashboardElements.messageElements.register, "Please fill all fields correctly (password min 6 chars).", "error");
-    }
-    const { data, error } = await supabaseClient.auth.signUp({ email, password, options: { data: { name, referral_code_input: referralCodeInput } } });
-    if (error) return displayFormMessage(dashboardElements.messageElements.register, error.message, "error");
-    
-    displayFormMessage(dashboardElements.messageElements.register, "Success! Please check your email to confirm.", "success");
-    showToast(`Confirmation email sent to ${email}.`, "success", 7000);
-    forms.register.reset();
-});
-
-if (forms.login) forms.login.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const email = document.getElementById('login-email').value.trim();
-    const password = document.getElementById('login-password').value;
-    if (!email || !password) return displayFormMessage(dashboardElements.messageElements.login, "Email and password required.", "error");
-
-    const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
-    if (error) return displayFormMessage(dashboardElements.messageElements.login, "Invalid credentials.", "error");
-    
-    showToast(`Welcome!`, "success"); // The onAuthStateChange listener will handle the rest
-});
-
-async function handleLogout() {
-    await supabaseClient.auth.signOut();
-}
-
-// --- CORE APP LOGIC ---
-
-// REPLACEMENT for loadDashboard
-async function loadDashboard() {
-    if (!currentUser) return; // Safety check
-
-    navigateToSection('dashboard', 'nav-dashboard');
-    // clearAllCountdowns(); // We will add this back later
-
-    // Fetch the user's complete data, including related investments and transactions
-    const { data: userData, error } = await supabaseClient
-        .from('profiles')
-        .select(`
-            *,
-            user_investments(*),
-            transactions(*)
-        `)
-        .eq('id', currentUser.id)
-        .single();
-
-    if (error) {
-        console.error('Error loading dashboard data:', error);
-        showToast('Could not load your dashboard.', 'error');
-        return;
-    }
-
-    // Update the global currentUser object with the fresh, complete data
-    currentUser = { ...currentUser, ...userData };
-    // For convenience, let's create simple aliases to match your old code structure
-    currentUser.investments = currentUser.user_investments || [];
-
-    // Now, populate the dashboard UI with all the fresh data
-    const displayCurrency = getUserDisplayCurrency();
-
-    // --- Populate Profile Card ---
-    if (dashboardElements.welcome) dashboardElements.welcome.textContent = `Welcome, ${currentUser.name}!`;
-    if (dashboardElements.userName) dashboardElements.userName.textContent = currentUser.name;
-    if (dashboardElements.userEmail) dashboardElements.userEmail.textContent = currentUser.email;
-    if (dashboardElements.memberSince) dashboardElements.memberSince.textContent = formatDate(currentUser.registered_date);
-    if (dashboardElements.referralCode) dashboardElements.referralCode.textContent = currentUser.referral_code;
-
-    // --- Populate Wallet Card ---
-    if (dashboardElements.walletActualBalance) dashboardElements.walletActualBalance.textContent = formatCurrencyValue(currentUser.wallet_balance, displayCurrency);
-    const totalInvestedActive = currentUser.investments
-        .filter(inv => inv.status === 'active')
-        .reduce((sum, inv) => sum + Number(inv.amount), 0);
-    if (dashboardElements.walletInvestedAmount) dashboardElements.walletInvestedAmount.textContent = formatCurrencyValue(totalInvestedActive, displayCurrency);
-    if (dashboardElements.walletRealizedProfit) dashboardElements.walletRealizedProfit.textContent = formatCurrencyValue(currentUser.total_realized_profit || 0, displayCurrency);
-
-    // --- Render Dynamic Lists ---
-    renderActiveInvestments(currentUser.investments);
-    renderTransactionHistory(currentUser.transactions);
-    
-    // --- Render Other Dashboard Components ---
-    renderPlans(planDisplays.dashboard, true); // This renders the available plans at the bottom
-    // renderAccountGrowthChart(currentUser.transactions); // We can enable this later
-}
-
-async function handleInvestmentSelection(planId) {
-    const plan = NFX_CONFIG.investmentPlans.find(p => p.id === planId);
-    if (!plan || !plan.is_enabled) return showToast("Invalid or disabled plan selected.", "error");
-
-    const displayCurrency = getUserDisplayCurrency();
-    const amountToInvestStr = prompt(`Enter amount for ${plan.name} (${displayCurrency.code})\nMin: ${formatCurrencyValue(plan.min_amount, displayCurrency)}, Max: ${formatCurrencyValue(plan.max_amount, displayCurrency)}\nWallet: ${formatCurrencyValue(currentUser.wallet_balance, displayCurrency)}`, String(plan.min_amount));
-    if (amountToInvestStr === null) return;
-    const amountToInvest = parseFloat(amountToInvestStr);
-
-    if (isNaN(amountToInvest) || amountToInvest < plan.min_amount || amountToInvest > plan.max_amount) {
-        return showToast(`Amount must be between ${formatCurrencyValue(plan.min_amount, displayCurrency)} and ${formatCurrencyValue(plan.max_amount, displayCurrency)}.`, "error");
-    }
-    if (amountToInvest > currentUser.wallet_balance) return showToast(`Insufficient balance.`, "error");
-
-    showToast('Processing your investment...', 'info');
-    const { error } = await supabaseClient.rpc('create_investment', {
-        p_plan_id: plan.id,
-        p_amount: amountToInvest,
-        p_currency_code: displayCurrency.code,
-        p_currency_symbol: displayCurrency.symbol
-    });
-    
-    if (error) {
-        console.error("Investment RPC Error:", error);
-        return showToast(error.message, 'error');
-    }
-
-    showToast(`Successfully invested ${formatCurrencyValue(amountToInvest, displayCurrency)} in ${plan.name}!`, "success");
-    await loadDashboard();
-}
-
-async function handlePlanMaturity(investmentId) {
-    showToast('Processing plan maturity...', 'info');
-    const { error } = await supabaseClient.rpc('process_plan_maturity', { p_investment_id: investmentId });
-
-    if (error) {
-        console.error("Maturity RPC Error:", error);
-        return showToast(error.message, 'error');
-    }
-
-    showToast(`Plan finalized and funds credited to your wallet!`, "success");
-    await loadDashboard();
-}
-
-// --- ADMIN PANEL ---
-async function loadAdminPanel() {
-    navigateToSection('adminPanel', 'nav-admin');
-    if (dashboardElements.adminPanelTitle) dashboardElements.adminPanelTitle.innerHTML = `<i class="fas fa-user-shield"></i> Admin Panel (${currentUser.email} - ${currentUser.role})`;
-    
-    // Default to overview tab
-    showAdminMainTab('overview', document.querySelector('.admin-tab-button[data-tab-target="overview"]'));
-}
-
-window.showAdminMainTab = function (tabName, clickedButton) {
-    document.querySelectorAll('#admin-panel-section > .admin-tab-content').forEach(content => content.classList.remove('active'));
-    document.getElementById(`admin-${tabName}-tab`).classList.add('active');
-    document.querySelectorAll('#admin-panel-section > .admin-tabs .admin-tab-button').forEach(button => button.classList.remove('active'));
-    clickedButton.classList.add('active');
-
-    // Load content for the selected tab
-    switch (tabName) {
-        case 'overview': loadAdminOverviewTabContent(); break;
-        case 'userManagement': loadAdminUserManagementTabContent(); break;
-        // Add other cases here as you build them out
+    if (withdrawalFeeInfoEl) withdrawalFeeInfoEl.textContent = `A ${NFX_CONFIG.withdrawalFeePercent}% withdrawal fee will be applied.`;
+    updateWithdrawalLimitsDisplay(); renderHeroContent(); renderFeatures(); renderTestimonials(); renderFAQs();
+    updateStatsBar(); displayBroadcastMessage();
+    if (planDisplays.public) renderPlans(planDisplays.public, false);
+    await populateAdminCurrencySelector(); 
+    if (dashboardElements.currencySelectorAdmin && NFX_CONFIG.defaultCurrency && NFX_CONFIG.defaultCurrency.code) {
+        dashboardElements.currencySelectorAdmin.value = NFX_CONFIG.defaultCurrency.code;
     }
 }
 
-async function loadAdminOverviewTabContent() {
-    const { data, error } = await supabaseClient.from('transactions').select('*').in('status', ['pending']);
-    if(error) return showToast('Could not load pending transactions', 'error');
-
-    const pendingDeposits = data.filter(tx => tx.type === 'deposit');
-    const pendingWithdrawals = data.filter(tx => tx.type === 'withdrawal');
-
-    renderAdminPendingTxList(dashboardElements.adminPendingDeposits, pendingDeposits, 'deposit');
-    renderAdminPendingTxList(dashboardElements.adminPendingWithdrawals, pendingWithdrawals, 'withdrawal');
-    dashboardElements.adminPendingDepositsCount.textContent = pendingDeposits.length;
-    dashboardElements.adminPendingWithdrawalsCount.textContent = pendingWithdrawals.length;
-
-    // Load global stats
-    const { data: stats, error: statsError } = await supabaseClient.rpc('get_global_stats');
-    if(statsError) return showToast('Could not load global stats', 'error');
-    
-    const { total_users, total_wallet_balances, total_invested } = stats;
-    dashboardElements.adminGlobalStatsDisplay.innerHTML = `
-        <div class="stat-card"><h4>Total Users</h4><p>${total_users}</p></div>
-        <div class="stat-card"><h4>Wallet Balances (Agg.)</h4><p>${formatCurrencyValue(total_wallet_balances)}</p></div>
-        <div class="stat-card"><h4>Actively Invested (Agg.)</h4><p>${formatCurrencyValue(total_invested)}</p></div>
-    `;
-}
-
-function renderAdminPendingTxList(container, items, type) {
-    if (!container) return;
-    container.innerHTML = '';
-    if (items.length === 0) {
-        container.innerHTML = `<p style="padding:10px 0;">No pending ${type}s.</p>`;
-        return;
+function updateWithdrawalLimitsDisplay() {
+    if (dashboardElements.withdrawalLimitsInfo) {
+        const displayCurrency = getUserDisplayCurrency(); 
+        dashboardElements.withdrawalLimitsInfo.textContent = `Min: ${formatCurrencyValue(NFX_CONFIG.minWithdrawalAmount, displayCurrency)}, Max: ${formatCurrencyValue(NFX_CONFIG.maxWithdrawalAmount, displayCurrency)}`;
     }
-    items.forEach(item => {
-        const card = document.createElement('div');
-        card.classList.add('pending-tx-card');
-        const itemCurrency = { code: item.currency, symbol: '$' }; // Simplified
-        let detailsHTML = type === 'deposit' 
-            ? `<p>Proof: ${item.proof_filename || 'N/A'}</p>`
-            : `<p>Details: ${item.details || 'N/A'}</p><p>Fee: ${formatCurrencyValue(item.fee, itemCurrency)} | Net: ${formatCurrencyValue(item.net_amount, itemCurrency)}</p>`;
-
-        card.innerHTML = `
-            <p><strong>User:</strong> ${item.user_email}</p>
-            <p><strong>Amount:</strong> ${formatCurrencyValue(item.amount, itemCurrency)}</p>
-            ${detailsHTML}
-            <div style="margin-top:10px;">
-                <button class="button button-small button-success" onclick="adminApproveTx('${item.id}', '${type}')"><i class="fas fa-check"></i> Approve</button>
-                <button class="button button-small button-danger" onclick="adminRejectTx('${item.id}')"><i class="fas fa-times"></i> Reject</button>
-            </div>`;
-        container.appendChild(card);
-    });
+}
+function getGlobalDisplayCurrency() { return NFX_CONFIG.defaultCurrency || NFX_BASE_CONFIG.defaultCurrency; }
+function getUserDisplayCurrency() {
+    if (currentUser && currentUser.profile && currentUser.profile.locked_currency) {
+        return currentUser.profile.locked_currency; 
+    }
+    return getGlobalDisplayCurrency();
 }
 
-async function adminApproveTx(txId, type) {
-    if(currentUser.role !== 'admin') return showToast('Permission Denied', 'error');
-    showToast('Processing...', 'info');
-    const { error } = await supabaseClient.rpc('approve_transaction', { transaction_id: txId, transaction_type: type });
-    if(error) return showToast(error.message, 'error');
-    showToast('Transaction approved!', 'success');
-    loadAdminOverviewTabContent();
-}
-
-async function adminRejectTx(txId) {
-    if(currentUser.role !== 'admin') return showToast('Permission Denied', 'error');
-    showToast('Processing...', 'info');
-    const { error } = await supabaseClient.from('transactions').update({ status: 'rejected' }).eq('id', txId);
-    if(error) return showToast(error.message, 'error');
-    showToast('Transaction rejected!', 'success');
-    loadAdminOverviewTabContent();
-}
-
-// Stubs for other admin functions
-async function loadAdminUserManagementTabContent() {
-    const { data, error } = await supabaseClient.from('profiles').select('*');
-    if (error) return showToast('Could not load users', 'error');
-    
-    // Simplified rendering
-    dashboardElements.adminUserListTableContainer.innerHTML = `
-        <table class="table-responsive-wrapper">
-            <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th></tr></thead>
-            <tbody>
-                ${data.map(user => `
-                    <tr>
-                        <td>${user.name}</td>
-                        <td>${user.email}</td>
-                        <td>${user.role}</td>
-                        <td>${user.is_suspended ? 'Suspended' : 'Active'}</td>
-                    </tr>
-                `).join('')}
-            </tbody>
-        </table>
-    `;
-}
-
-// --- UI & HELPER FUNCTIONS ---
-function navigateToSection(sectionKey, navLinkId = null) {
+window.navigateToSection = function(sectionKey, navLinkId = null) {
     const activeLinkElement = navLinkId ? document.getElementById(navLinkId) : null;
     showSection(sectionKey, activeLinkElement);
-}
+};
 
 function showSection(sectionKey, activeLinkElement = null) {
-    if (NFX_CONFIG.maintenance_mode && (!currentUser || currentUser.role !== 'admin')) {
-        if (!['home', 'faq', 'login', 'register'].includes(sectionKey)) {
-            showToast("Site is currently under maintenance.", "warning", 5000);
-            return navigateToSection('home', 'nav-home');
+    if (NFX_CONFIG.maintenanceMode && (!currentUser || !currentUser.profile || (currentUser.profile.role !== 'super_admin' && currentUser.profile.role !== 'assistant_admin'))) {
+        const allowedSectionsInMaintenance = ['home', 'faq']; 
+         if (sectionKey === 'login' || sectionKey === 'register') {
+             // allow
+        } else if (!allowedSectionsInMaintenance.includes(sectionKey)) {
+             window.showToast("Site is currently undergoing maintenance. Please try again later.", "warning", 5000);
+             window.navigateToSection('home', 'nav-home'); 
+             return;
         }
     }
 
-    Object.values(sections).flat().forEach(sec => sec && sec.classList.add('hidden'));
-    const target = sections[sectionKey];
-    if (Array.isArray(target)) {
-        target.forEach(part => part && part.classList.remove('hidden'));
-    } else if (target) {
-        target.classList.remove('hidden');
-    }
-
-    Object.values(navLinks).forEach(link => link && link.classList.remove('active'));
-    if (activeLinkElement) activeLinkElement.classList.add('active');
-    else if (navLinks[sectionKey]) navLinks[sectionKey].classList.add('active');
-    window.scrollTo(0, 0);
-}
-
-function updateNavForLoginState() {
-    const isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.role === 'assistant_admin');
-    document.querySelectorAll('.auth-nav').forEach(el => el.classList.add('hidden'));
-    navLinks.logout.classList.remove('hidden');
-    if (isAdmin) {
-        navLinks.admin.classList.remove('hidden');
-        navLinks.dashboard.classList.add('hidden');
+    dashboardElements.allPageContentWrappers.forEach(sec => { if (sec) sec.classList.add('hidden'); });
+    const targetSectionOrGroup = sections[sectionKey];
+    if (Array.isArray(targetSectionOrGroup)) {
+        targetSectionOrGroup.forEach(part => { if (part) part.classList.remove('hidden'); });
+    } else if (targetSectionOrGroup) {
+        targetSectionOrGroup.classList.remove('hidden');
     } else {
-        navLinks.dashboard.classList.remove('hidden');
-        navLinks.admin.classList.add('hidden');
+        console.error("Target section not found for key:", sectionKey);
+        if (sections.home && Array.isArray(sections.home)) {
+            sections.home.forEach(part => { if (part) part.classList.remove('hidden'); });
+            if (navLinks.home && navLinks.home.classList) navLinks.home.classList.add('active');
+        } return;
+    }
+    Object.values(navLinks).forEach(link => {
+        if (link && link.classList) {
+            link.classList.remove('active');
+        }
+    });
+    if (activeLinkElement && activeLinkElement.classList) {
+        activeLinkElement.classList.add('active');
+    } else if (sectionKey === 'home' && navLinks.home && navLinks.home.classList) {
+        navLinks.home.classList.add('active');
+    }
+    window.scrollTo(0, 0);
+    if (sectionKey !== 'dashboard' && sectionKey !== 'adminPanel') { clearAllCountdowns(); }
+    if (dashboardElements.notificationsDropdownContainer && dashboardElements.notificationsDropdownContainer.classList.contains('show')) {
+        dashboardElements.notificationsDropdownContainer.classList.remove('show');
     }
 }
 
-function updateNavForLogoutState() {
-    document.querySelectorAll('.auth-nav').forEach(el => el.classList.remove('hidden'));
-    navLinks.logout.classList.add('hidden');
-    navLinks.dashboard.classList.add('hidden');
-    navLinks.admin.classList.add('hidden');
+function displayFormMessage(element, message, type = 'error') {
+    if (!element) return; element.textContent = message;
+    element.className = `form-message ${type}`; element.classList.remove('hidden');
+}
+function clearFormMessage(element) {
+    if (!element) return; element.textContent = '';
+    element.classList.add('hidden'); element.className = 'form-message hidden';
+}
+function formatDate(dateString, options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }) {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) {
+        console.warn("Invalid date string passed to formatDate:", dateString);
+        return 'Invalid Date';
+    }
+    try {
+        return date.toLocaleDateString(undefined, options);
+    } catch (e) {
+        console.error("Error formatting date:", dateString, "with options:", options, e);
+        return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    }
+}
+function formatCurrencyValue(amount, currencyObjInput) {
+    const currencyObj = currencyObjInput || getUserDisplayCurrency();
+    if (typeof amount !== 'number' || isNaN(amount)) amount = 0;
+    const effectiveCurrency = (currencyObj && currencyObj.symbol && currencyObj.code) ? currencyObj : (NFX_CONFIG.defaultCurrency || NFX_BASE_CONFIG.defaultCurrency);
+    return effectiveCurrency.symbol + parseFloat(amount).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+window.showToast = function(message, type = 'info', duration = 3500) {
+    const toastContainer = document.getElementById('toast-container');
+    if (!toastContainer) return; const toast = document.createElement('div');
+    toast.classList.add('toast', type); let iconClass = 'fas fa-info-circle';
+    if (type === 'success') iconClass = 'fas fa-check-circle';
+    else if (type === 'error') iconClass = 'fas fa-exclamation-circle';
+    else if (type === 'warning') iconClass = 'fas fa-exclamation-triangle';
+    toast.innerHTML = `<i class="${iconClass}"></i> ${message}`;
+    toastContainer.appendChild(toast);
+    void toast.offsetHeight; 
+    toast.classList.add('show');
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 500);
+    }, duration);
+};
+function addTime(date, amount, unit) {
+    const result = new Date(date);
+    if (unit === 'days') result.setDate(result.getDate() + amount);
+    if (unit === 'minutes') result.setMinutes(result.getMinutes() + amount);
+    if (unit === 'seconds') result.setSeconds(result.getSeconds() + amount);
+    return result;
+}
+async function copyToClipboard(text) {
+    try {
+        await navigator.clipboard.writeText(text); window.showToast("Referral code copied!", "success");
+    } catch (err) { window.showToast("Failed to copy code.", "error"); console.error('Clipboard copy failed:', err); }
 }
 
 function renderHeroContent() {
     if (dashboardElements.heroHeadline) dashboardElements.heroHeadline.textContent = NFX_CONFIG.heroContent.headline;
     if (dashboardElements.heroSubheadline) dashboardElements.heroSubheadline.textContent = NFX_CONFIG.heroContent.subheadline;
 }
-
 function renderFeatures() {
     const container = document.getElementById('features-grid-container'); if (!container) return; container.innerHTML = '';
     (NFX_CONFIG.features || []).forEach((feature, index) => {
         const item = document.createElement('div');
         item.className = 'feature-item aos';
         item.setAttribute('data-aos', 'fade-up');
-        item.innerHTML = `<div class="icon-wrapper"><i class="${feature.icon_class || 'fas fa-star'}"></i></div><h3>${feature.title}</h3><p>${feature.description}</p>`;
+        item.setAttribute('data-aos-delay', index * 100);
+        item.innerHTML = ` <div class="icon-wrapper"><i class="${feature.iconClass || 'fas fa-star'}"></i></div> <h3>${feature.title}</h3> <p>${feature.description}</p> `;
         container.appendChild(item);
         if (animationObserver) animationObserver.observe(item);
     });
+    if (!NFX_CONFIG.features || NFX_CONFIG.features.length === 0) { container.innerHTML = '<p class="text-center" style="grid-column: 1 / -1;">No features to display.</p>'; }
 }
-
 function renderTestimonials() {
     const container = document.getElementById('testimonials-grid-container'); if (!container) return; container.innerHTML = '';
     (NFX_CONFIG.testimonials || []).forEach((testimonial, index) => {
         const card = document.createElement('div');
         card.className = 'testimonial-card aos';
         card.setAttribute('data-aos', 'fade-up');
-        card.innerHTML = `<img src="${testimonial.avatar || `https://i.pravatar.cc/150?u=${testimonial.author}`}" alt="${testimonial.author}" class="avatar"><p class="author">${testimonial.author} <span>${testimonial.role}</span></p><p class="quote">${testimonial.quote}</p>`;
+        card.setAttribute('data-aos-delay', index * 100);
+        card.innerHTML = ` <img src="${testimonial.avatar || `https://i.pravatar.cc/150?u=${testimonial.author}`}" alt="${testimonial.author}" class="avatar"> <p class="author">${testimonial.author} <span>${testimonial.role}</span></p> <p class="quote">${testimonial.quote}</p> `;
         container.appendChild(card);
         if (animationObserver) animationObserver.observe(card);
     });
+    if (!NFX_CONFIG.testimonials || NFX_CONFIG.testimonials.length === 0) { container.innerHTML = '<p class="text-center" style="grid-column: 1 / -1;">No testimonials available.</p>'; }
 }
-
 function renderFAQs() {
     const faqContainer = document.getElementById('faq-container'); if (!faqContainer) return; faqContainer.innerHTML = '';
     (NFX_CONFIG.faqs || []).forEach(faq => {
         const item = document.createElement('div'); item.classList.add('faq-item');
-        item.innerHTML = `<div class="faq-question">${faq.question} <span class="faq-toggle"><i class="fas fa-plus"></i></span></div><div class="faq-answer"><p>${faq.answer}</p></div>`;
-        item.querySelector('.faq-question').addEventListener('click', () => {
-            item.classList.toggle('active');
-            const icon = item.querySelector('.faq-toggle i');
-            icon.className = `fas ${item.classList.contains('active') ? 'fa-minus' : 'fa-plus'}`;
-        });
+        item.innerHTML = `<div class="faq-question">${faq.q} <span class="faq-toggle"><i class="fas fa-plus"></i></span></div><div class="faq-answer"><p>${faq.a}</p></div>`;
+        const questionEl = item.querySelector('.faq-question');
+        if (questionEl) {
+            questionEl.addEventListener('click', () => {
+                item.classList.toggle('active'); const icon = item.querySelector('.faq-toggle i');
+                if (icon) { icon.className = `fas ${item.classList.contains('active') ? 'fa-minus' : 'fa-plus'}`; }
+            });
+        }
         faqContainer.appendChild(item);
     });
+    if (!NFX_CONFIG.faqs || NFX_CONFIG.faqs.length === 0) { faqContainer.innerHTML = '<p class="text-center">No FAQs available.</p>'; }
+}
+function updateStatsBar() {
+    const statsUsersEl = document.getElementById('stats-users');
+    const statsInvestedEl = document.getElementById('stats-invested');
+    const statsProfitEl = document.getElementById('stats-profit');
+    if (statsUsersEl && NFX_CONFIG.siteStats) {
+        const usersTarget = parseFloat(String(NFX_CONFIG.siteStats.users).replace(/[^0-9]/g, ''));
+        statsUsersEl.setAttribute('data-target', usersTarget);
+        statsUsersEl.innerHTML = "0+"; 
+    }
+    if (statsInvestedEl && NFX_CONFIG.siteStats) {
+        statsInvestedEl.setAttribute('data-target', NFX_CONFIG.siteStats.investedBase || 0);
+        statsInvestedEl.innerHTML = "$0+"; 
+    }
+    if (statsProfitEl && NFX_CONFIG.siteStats) {
+        statsProfitEl.setAttribute('data-target', NFX_CONFIG.siteStats.profitBase || 0);
+        statsProfitEl.innerHTML = "$0+"; 
+    }
 }
 
-// REPLACEMENT for renderActiveInvestments
-function renderActiveInvestments(investments) {
-    const container = dashboardElements.activeInvestmentsList;
-    if (!container) return;
-    container.innerHTML = '';
-
-    const activeInvestments = (investments || []).filter(inv => inv.status === 'active');
-
-    dashboardElements.activeInvestmentsCount.textContent = activeInvestments.length;
-    dashboardElements.noInvestmentMessage.classList.toggle('hidden', activeInvestments.length > 0);
-
-    activeInvestments.forEach(inv => displaySingleInvestment(inv));
+async function populateAdminCurrencySelector() {
+    if (!dashboardElements.currencySelectorAdmin) return;
+    dashboardElements.currencySelectorAdmin.innerHTML = '';
+    (NFX_CONFIG.currencies || []).forEach(curr => { 
+        const option = document.createElement('option');
+        option.value = curr.code;
+        option.dataset.symbol = curr.symbol;
+        option.textContent = `${curr.code} (${curr.symbol})`;
+        dashboardElements.currencySelectorAdmin.appendChild(option);
+    });
 }
-
-// REPLACEMENT for displaySingleInvestment
-function displaySingleInvestment(investment) {
-    const itemDiv = document.createElement('div');
-    itemDiv.classList.add('active-investment-item');
-    itemDiv.id = `investment-item-${investment.id}`;
-    
-    const currency = { code: investment.currency, symbol: '$' }; // Simplified for now
-    const hasMatured = new Date() > new Date(investment.maturity_date);
-
-    itemDiv.innerHTML = `
-        <h4>${investment.plan_name}</h4>
-        <p>Invested: <strong>${formatCurrencyValue(investment.amount, currency)}</strong></p>
-        <p>Start Date: <span>${formatDate(investment.start_date)}</span></p>
-        <p>Matures On: <span>${formatDate(investment.maturity_date)}</span></p>
-        ${hasMatured 
-            ? `<button class="button button-small button-success" onclick="handlePlanMaturity('${investment.id}')">Claim Funds</button>`
-            : `<div class="countdown-timer" style="color:var(--info-color);">Status: Active</div>`
+async function initAdminCurrencySelector() {
+    if (!dashboardElements.currencySelectorAdmin || !dashboardElements.currencySelectorAdminContainer) return;
+    await populateAdminCurrencySelector(); 
+    const globalCurrency = getGlobalDisplayCurrency();
+    if (globalCurrency && globalCurrency.code) {
+      dashboardElements.currencySelectorAdmin.value = globalCurrency.code;
+    }
+    dashboardElements.currencySelectorAdminContainer.style.display = (currentUser && currentUser.profile && currentUser.profile.role === 'super_admin') ? 'inline-block' : 'none';
+    dashboardElements.currencySelectorAdmin.addEventListener('change', async (e) => {
+        if (!currentUser || !currentUser.profile || currentUser.profile.role !== 'super_admin') return;
+        const selectedOption = e.target.options[e.target.selectedIndex];
+        const newGlobalCurrency = { code: selectedOption.value, symbol: selectedOption.dataset.symbol };
+        try {
+            const { error } = await supabase.from(DB_TABLES.SITE_SETTINGS).update({ default_currency: newGlobalCurrency }).eq('id', 1); 
+            if (error) throw error;
+            await loadEffectiveConfig(); 
+            window.showToast(`Global site currency changed to ${newGlobalCurrency.code} (${newGlobalCurrency.symbol}).`, 'info', 5000);
+            const statsInvestedEl = document.getElementById('stats-invested');
+            const statsProfitEl = document.getElementById('stats-profit');
+            if (statsInvestedEl) statsInvestedEl.textContent = formatCurrencyValue(NFX_CONFIG.siteStats.investedBase, newGlobalCurrency) + "+";
+            if (statsProfitEl) statsProfitEl.textContent = formatCurrencyValue(NFX_CONFIG.siteStats.profitBase, newGlobalCurrency) + "+";
+            if (planDisplays.public && sections.plans && !sections.plans.classList.contains('hidden')) renderPlans(planDisplays.public, false);
+            if (currentUser && (!currentUser.profile || !currentUser.profile.locked_currency) && sections.dashboard && !sections.dashboard.classList.contains('hidden')) {
+                await loadDashboard(); 
+            }
+            updateCurrencyDisplays(); updateWithdrawalLimitsDisplay();
+        } catch (error) {
+            console.error("Error updating global currency:", error);
+            window.showToast("Failed to update global currency.", "error");
+            dashboardElements.currencySelectorAdmin.value = getGlobalDisplayCurrency().code;
         }
-    `;
-    dashboardElements.activeInvestmentsList.appendChild(itemDiv);
-
-    // We can add the real countdown logic here later if needed
-}
-
-// REPLACEMENT for renderTransactionHistory
-function renderTransactionHistory(transactions, filterType = 'all') {
-    const container = dashboardElements.transactionTableBody;
-    if (!container) return;
-    container.innerHTML = '';
-
-    const filtered = (transactions || []).filter(tx => {
-        if (filterType === 'all') return true;
-        return tx.type.includes(filterType); // Simple filter
-    });
-
-    dashboardElements.noTransactionsMessage.classList.toggle('hidden', filtered.length > 0);
-
-    filtered.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).forEach(tx => {
-        const row = container.insertRow();
-        const currency = { code: tx.currency, symbol: '$' };
-        row.innerHTML = `
-            <td>${formatDate(tx.created_at)}</td>
-            <td>${tx.description}</td>
-            <td class="amount-${tx.tx_type_indicator}">${formatCurrencyValue(tx.amount, currency)}</td>
-            <td class="status-${tx.status}">${tx.status}</td>
-            <td>${tx.type.replace(/_/g, ' ')}</td>
-        `;
     });
 }
-
-function renderPlans(container, isDashboard) {
-    if (!container) return;
-    container.innerHTML = '';
+function updateCurrencyDisplays() {
     const displayCurrency = getUserDisplayCurrency();
-    (NFX_CONFIG.investmentPlans || []).forEach(plan => {
-        if (!plan.is_enabled && !isDashboard) return;
-        const card = document.createElement('div');
-        card.className = `plan-card ${!plan.is_enabled ? 'disabled-plan' : ''}`;
-        card.innerHTML = `<h3>${plan.name}</h3><p class="price-range">Invest: ${formatCurrencyValue(plan.min_amount, displayCurrency)} - ${formatCurrencyValue(plan.max_amount, displayCurrency)}</p>`;
-        if (isDashboard && plan.is_enabled) {
-            const btn = document.createElement('button');
-            btn.className = 'button';
-            btn.innerHTML = 'Invest';
-            btn.onclick = () => handleInvestmentSelection(plan.id);
-            card.appendChild(btn);
+    document.querySelectorAll('.currency-symbol-modal, .currency-symbol-modal-calc, .currency-symbol-modal-goal').forEach(span => span.textContent = displayCurrency.symbol);
+    const globalSiteCurrency = getGlobalDisplayCurrency();
+    const adminReferralBonusLabel = document.querySelector('label[for="admin-setting-referral-bonus"]');
+    if (adminReferralBonusLabel) {
+        let symbolSpan = adminReferralBonusLabel.querySelector('.currency-symbol-admin');
+        if (!symbolSpan) {
+            symbolSpan = document.createElement('span'); symbolSpan.classList.add('currency-symbol-admin');
+            adminReferralBonusLabel.appendChild(document.createTextNode(" ("));
+            adminReferralBonusLabel.appendChild(symbolSpan); adminReferralBonusLabel.appendChild(document.createTextNode(")"));
         }
-        container.appendChild(card);
-    });
+        symbolSpan.textContent = globalSiteCurrency.symbol;
+    }
+    dashboardElements.adminPlanCurrencySymbols = document.querySelectorAll('.admin-plan-currency-symbol'); 
+    if (dashboardElements.adminPlanCurrencySymbols) {
+        dashboardElements.adminPlanCurrencySymbols.forEach(span => span.textContent = globalSiteCurrency.symbol);
+    }
+}
+async function checkAndLockCurrency() {
+    if (!currentUser || !currentUser.profile || currentUser.profile.role === 'super_admin' || currentUser.profile.role === 'assistant_admin') return;
+    const userProfile = currentUser.profile;
+    const globalCurrency = getGlobalDisplayCurrency();
+    let currencyChanged = false;
+    if (userProfile.investments_count > 0 && !userProfile.locked_currency) {
+        userProfile.locked_currency = globalCurrency; currencyChanged = true;
+        window.showToast(`Account currency locked to ${userProfile.locked_currency.code} (${userProfile.locked_currency.symbol}) while investments are active.`, "info");
+    } else if (userProfile.investments_count === 0 && userProfile.locked_currency) {
+        userProfile.locked_currency = null; currencyChanged = true;
+        window.showToast(`Account currency unlocked. Display uses global: ${globalCurrency.code}.`, "info");
+    }
+    if (currencyChanged) {
+        try {
+            const { error } = await supabase.from(DB_TABLES.PROFILES).update({ locked_currency: userProfile.locked_currency }).eq('id', currentUser.authUser.id);
+            if (error) throw error;
+            currentUser.profile = userProfile; 
+        } catch (error) {
+            console.error("Error updating locked currency:", error);
+            window.showToast("Failed to update currency lock status.", "error");
+        }
+    }
+    if (dashboardElements.accountCurrency) {
+        dashboardElements.accountCurrency.textContent = userProfile.locked_currency ?
+            `${userProfile.locked_currency.code} (${userProfile.locked_currency.symbol}) - Locked` :
+            `${globalCurrency.code} (${globalCurrency.symbol}) - Global`;
+    }
+    updateCurrencyDisplays(); updateWithdrawalLimitsDisplay();
 }
 
-// Stubs for other less critical functions for now
-function updateStatsBar() {}
-function updateWithdrawalLimitsDisplay() {}
-function getUserDisplayCurrency() { return (currentUser && currentUser.locked_currency) ? JSON.parse(currentUser.locked_currency) : { code: 'USD', symbol: '$' }; }
-function getGlobalDisplayCurrency() { return { code: 'USD', symbol: '$' }; }
-function checkAndLockCurrency() {}
-function displayBroadcastMessage() {}
-async function loadUserNotifications() {}
-function populateProfitCalculatorPlans() {}
-function loadAndDisplayFinancialGoal() {}
-function renderAccountGrowthChart(transactions) {}
-function updateCurrencyDisplays() {}
-async function loadUserSupportTicketsBrief() {}
-function copyToClipboard(text) { navigator.clipboard.writeText(text).then(() => showToast('Copied!', 'success')); }
-function clearAllCountdowns() { Object.values(countdownIntervals).forEach(clearInterval); countdownIntervals = {}; }
-function openModal(id) { const el = document.getElementById(id); if(el) el.classList.add('show'); }
-function closeModal(id) { const el = document.getElementById(id); if(el) el.classList.remove('show'); }
-function formatDate(d) { return new Date(d).toLocaleDateString(); }
-function formatCurrencyValue(amount, currency) { const sym = (currency && currency.symbol) || '$'; return `${sym}${Number(amount || 0).toFixed(2).replace(/\\B(?=(\\d{3})+(?!\\d))/g, ',')}`; }
-function showToast(message, type = 'info', duration = 3500) { const cont = document.getElementById('toast-container'); if (!cont) return; const toast = document.createElement('div'); toast.className = `toast ${type}`; toast.innerHTML = `<i class="fas fa-info-circle"></i> ${message}`; cont.appendChild(toast); setTimeout(() => toast.classList.add('show'), 10); setTimeout(() => { toast.classList.remove('show'); setTimeout(() => cont.removeChild(toast), 500); }, duration); }
-function displayFormMessage(element, message, type = 'error') { if(element) { element.textContent = message; element.className = `form-message ${type}`; element.classList.remove('hidden'); } }
-
-// --- APP INITIALIZATION ---
-async function initApp() {
-    await loadAndApplyConfig();
-    
-    // Setup navigation clicks
-    Object.entries({
+function setupNavigation() {
+    const navMapping = {
         'nav-home-logo': 'home', 'nav-home': 'home', 'nav-plans': 'plans',
         'nav-faq': 'faq', 'nav-login': 'login', 'nav-register': 'register',
         'nav-dashboard': 'dashboard', 'nav-admin': 'adminPanel'
-    }).forEach(([id, section]) => {
-        const el = document.getElementById(id);
-        if (el) el.addEventListener('click', (e) => { e.preventDefault(); navigateToSection(section, id); });
+    };
+    Object.entries(navMapping).forEach(([navId, sectionKey]) => {
+        const linkElement = document.getElementById(navId);
+        if (linkElement) {
+            linkElement.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (sections[sectionKey]) window.navigateToSection(sectionKey, navId);
+                else {
+                    console.error(`Section key '${sectionKey}' not found. Defaulting to home.`);
+                    window.navigateToSection('home', 'nav-home');
+                }
+            });
+        }
     });
-    if(navLinks.logout) navLinks.logout.addEventListener('click', (e) => { e.preventDefault(); handleLogout(); });
-
-    // Setup animation observer
-    animationObserver = new IntersectionObserver((entries) => {
-        entries.forEach(entry => { if (entry.isIntersecting) entry.target.classList.add('is-visible'); });
-    }, { threshold: 0.1 });
-    document.querySelectorAll('.aos').forEach(el => animationObserver.observe(el));
-
-    document.getElementById('current-year').textContent = new Date().getFullYear();
-    
-    // The onAuthStateChange listener handles the initial user state, so no need for checks here.
-    navigateToSection('home');
+    if (navLinks.logout) navLinks.logout.addEventListener('click', (e) => { e.preventDefault(); handleLogout(); });
 }
 
+function updateNavForLoginState() {
+    document.querySelectorAll('.auth-nav').forEach(el => el.classList.add('hidden'));
+    if (dashboardElements.userNotificationBell) dashboardElements.userNotificationBell.classList.add('hidden');
+    const isAdmin = currentUser && currentUser.profile && (currentUser.profile.role === 'super_admin' || currentUser.profile.role === 'assistant_admin');
+    const isSuperAdmin = currentUser && currentUser.profile && currentUser.profile.role === 'super_admin';
+    if (isAdmin) {
+        if (navLinks.admin) navLinks.admin.classList.remove('hidden');
+        if (navLinks.logout) navLinks.logout.classList.remove('hidden');
+        if (navLinks.dashboard) navLinks.dashboard.classList.add('hidden'); 
+        if (dashboardElements.currencySelectorAdminContainer && isSuperAdmin) dashboardElements.currencySelectorAdminContainer.style.display = 'inline-block';
+        else if (dashboardElements.currencySelectorAdminContainer) dashboardElements.currencySelectorAdminContainer.style.display = 'none';
+        if (dashboardElements.userNotificationBell) { dashboardElements.userNotificationBell.classList.remove('hidden'); loadUserNotifications(); }
+    } else if (currentUser && currentUser.profile) { 
+        if (navLinks.dashboard) navLinks.dashboard.classList.remove('hidden');
+        if (navLinks.logout) navLinks.logout.classList.remove('hidden');
+        if (navLinks.admin) navLinks.admin.classList.add('hidden');
+        if (dashboardElements.currencySelectorAdminContainer) dashboardElements.currencySelectorAdminContainer.style.display = 'none';
+        if (dashboardElements.userNotificationBell) { dashboardElements.userNotificationBell.classList.remove('hidden'); loadUserNotifications(); }
+        checkAndLockCurrency();
+    }
+}
+function updateNavForLogoutState() {
+    document.querySelectorAll('.auth-nav').forEach(el => el.classList.remove('hidden'));
+    document.querySelectorAll('.user-nav, .admin-nav').forEach(el => el.classList.add('hidden'));
+    if (navLinks.logout) navLinks.logout.classList.add('hidden');
+    if (navLinks.dashboard && navLinks.dashboard.classList) navLinks.dashboard.classList.remove('active');
+    if (navLinks.admin && navLinks.admin.classList) navLinks.admin.classList.remove('active');
+    if (dashboardElements.currencySelectorAdminContainer) dashboardElements.currencySelectorAdminContainer.style.display = 'none';
+    if (dashboardElements.userNotificationBell) dashboardElements.userNotificationBell.classList.add('hidden');
+}
+
+if (forms.register) forms.register.addEventListener('submit', async (e) => { e.preventDefault(); clearFormMessage(dashboardElements.messageElements.register); const name = document.getElementById('register-name').value.trim(); const email = document.getElementById('register-email').value.trim(); const password = document.getElementById('register-password').value; const referralCodeInput = document.getElementById('register-referral-code').value.trim(); if (!name || !email || !password) { displayFormMessage(dashboardElements.messageElements.register, "All fields are required.", "error"); return; } if (password.length < 6) { displayFormMessage(dashboardElements.messageElements.register, "Password must be at least 6 characters.", "error"); return; } try { const { data: authData, error: signUpError } = await supabase.auth.signUp({ email: email, password: password, options: { data: { full_name: name } } }); if (signUpError) { if (signUpError.message.includes("User already registered")) { displayFormMessage(dashboardElements.messageElements.register, "Email already registered.", "error"); } else { throw signUpError; } return; } if (!authData.user) { displayFormMessage(dashboardElements.messageElements.register, "Registration failed. Please try again.", "error"); if (authData.session === null && authData.user === null) { window.showToast("Please check your email to confirm your registration.", "info", 7000); } return; } let referredByUserId = null; let referrerProfile = null; if (referralCodeInput) { const { data: refProfileData, error: refProfileError } = await supabase.from(DB_TABLES.PROFILES).select('id, email, locked_currency, wallet_balance').eq('referral_code', referralCodeInput).neq('email', email).single(); if (refProfileError && refProfileError.code !== 'PGRST116') throw refProfileError; if (!refProfileData) { displayFormMessage(dashboardElements.messageElements.register, "Invalid referral code. Proceeding without referral.", "warning"); } else { referredByUserId = refProfileData.id; referrerProfile = refProfileData; } } const newUserProfile = { id: authData.user.id, full_name: name, email: email, wallet_balance: 0, total_realized_profit: 0, is_2fa_enabled: false, role: email === NFX_BASE_CONFIG.adminCredentials.email ? 'super_admin' : 'user', referral_code: `NFX${Date.now().toString(36).slice(-4).toUpperCase()}`, locked_currency: null, financial_goal: null, referred_by_user_id: referredByUserId, is_suspended: false, profile_pic_url: null, }; const { error: profileError } = await supabase.from(DB_TABLES.PROFILES).insert(newUserProfile); if (profileError) throw profileError; if (referrerProfile && NFX_CONFIG.referralBonusAmount > 0) { const bonusCurrency = referrerProfile.locked_currency || getGlobalDisplayCurrency(); const newReferrerBalance = (referrerProfile.wallet_balance || 0) + NFX_CONFIG.referralBonusAmount; const { error: updateRefBalanceError } = await supabase.from(DB_TABLES.PROFILES).update({ wallet_balance: newReferrerBalance }).eq('id', referrerProfile.id); if (updateRefBalanceError) console.error("Error updating referrer balance:", updateRefBalanceError); else { await addTransactionToDB(referrerProfile.id, referrerProfile.email, 'referral_bonus', `Referral bonus for ${name}`, NFX_CONFIG.referralBonusAmount, 'approved', 'System', bonusCurrency); await addUserSystemNotificationToDB(referrerProfile.id, `You received a ${formatCurrencyValue(NFX_CONFIG.referralBonusAmount, bonusCurrency)} referral bonus for ${name}!`, 'success'); } } displayFormMessage(dashboardElements.messageElements.register, "Registration successful! Please check your email to confirm your account then login.", "success"); window.showToast(`Account created! Please confirm your email then login.`, "success", 7000); forms.register.reset(); } catch (error) { console.error("Registration error:", error); displayFormMessage(dashboardElements.messageElements.register, error.message || "Registration failed.", "error"); window.showToast(error.message || "Registration failed.", "error"); } });
+if (forms.login) forms.login.addEventListener('submit', async (e) => { e.preventDefault(); clearFormMessage(dashboardElements.messageElements.login); const email = document.getElementById('login-email').value.trim(); const password = document.getElementById('login-password').value; if (NFX_CONFIG.maintenanceMode && email !== NFX_BASE_CONFIG.adminCredentials.email) { displayFormMessage(dashboardElements.messageElements.login, "Site under maintenance. Login temporarily disabled for users.", "warning"); window.showToast("Login disabled due to site maintenance.", "warning"); return; } if (!email || !password) { displayFormMessage(dashboardElements.messageElements.login, "Email and password required.", "error"); return; } try { const { data: authData, error: signInError } = await supabase.auth.signInWithPassword({ email, password }); if (signInError) throw signInError; if (!authData.user) { displayFormMessage(dashboardElements.messageElements.login, "Login failed. Please try again.", "error"); return; } const { data: profileData, error: profileError } = await supabase.from(DB_TABLES.PROFILES).select(`*, user_investments: ${DB_TABLES.USER_INVESTMENTS}(*), transactions: ${DB_TABLES.TRANSACTIONS}(*)`).eq('id', authData.user.id).single(); if (profileError) { if (profileError.code === 'PGRST116') { window.showToast("User profile not found. Please contact support.", "error"); await supabase.auth.signOut(); return; } throw profileError; } if (profileData.is_suspended) { displayFormMessage(dashboardElements.messageElements.login, "Account suspended. Contact support.", "error"); window.showToast("Account suspended. Contact support.", "error"); await supabase.auth.signOut(); return; } currentUser = { authUser: authData.user, profile: profileData, }; currentUser.profile.investments = currentUser.profile.user_investments || []; currentUser.profile.transactions = currentUser.profile.transactions || []; delete currentUser.profile.user_investments; await supabase.from(DB_TABLES.PROFILES).update({ last_login_at: new Date().toISOString() }).eq('id', authData.user.id); updateNavForLoginState(); if (profileData.role === 'super_admin' || profileData.role === 'assistant_admin') { await loadAdminPanel(); } else { await loadDashboard(); } forms.login.reset(); window.showToast(`Welcome back, ${profileData.full_name}!`, "success"); } catch (error) { console.error("Login error:", error); displayFormMessage(dashboardElements.messageElements.login, error.message || "Invalid email or password.", "error"); window.showToast(error.message || "Login failed.", "error"); } });
+async function handleLogout() { const { error } = await supabase.auth.signOut(); if (error) { console.error("Error logging out:", error); window.showToast("Logout failed.", "error"); } currentUser = null; clearAllCountdowns(); updateNavForLogoutState(); window.navigateToSection('home', 'nav-home'); window.showToast("You have been logged out.", "info"); }
+function renderPlans(containerElement, forDashboard = false) { if (!containerElement) return; containerElement.innerHTML = ''; const displayCurrency = forDashboard ? getUserDisplayCurrency() : getGlobalDisplayCurrency(); let hasVisiblePlans = false; const plansToRender = NFX_CONFIG.investmentPlans || []; plansToRender.forEach(plan => { if (!plan.isEnabled && !forDashboard && !(currentUser && currentUser.profile && ['super_admin', 'assistant_admin'].includes(currentUser.profile.role))) return; const card = document.createElement('div'); card.classList.add('plan-card'); if (!plan.isEnabled) card.classList.add('disabled-plan'); let profitDisplay = ''; let durationDisplay = ''; if (plan.isShortTerm) { profitDisplay = `Total Profit: ${plan.totalProfitPercentShortTerm}%`; if (plan.dailyProfitFixedShortTerm > 0) profitDisplay += ` / ${formatCurrencyValue(plan.dailyProfitFixedShortTerm, getGlobalDisplayCurrency())} daily fixed (opt.)`; else if (plan.dailyProfitPercentShortTerm > 0) profitDisplay += ` / ${plan.dailyProfitPercentShortTerm}% daily (opt.)`; let days = plan.durationDaysShortTerm || 0; let mins = plan.durationMinutesShortTerm || 0; durationDisplay = (days > 0 ? `${days} Days ` : '') + (mins > 0 ? `${mins} Mins` : ''); if (!durationDisplay) durationDisplay = "Short period"; } else { if (plan.dailyProfitFixedLongTerm > 0) { profitDisplay = `Daily Profit: ${formatCurrencyValue(plan.dailyProfitFixedLongTerm, getGlobalDisplayCurrency())}`; } else if (plan.dailyProfitPercentLongTerm > 0){ profitDisplay = `Daily Profit: ${plan.dailyProfitPercentLongTerm}%`; } else if (plan.totalProfitPercentLongTerm > 0) { profitDisplay = `Total Profit: ${plan.totalProfitPercentLongTerm}%`; } durationDisplay = `${plan.durationDaysLongTerm} Days`; } let featuresList = `<li>Duration: ${durationDisplay.trim()}</li><li>${plan.description}</li><li>Risk Profile: ${plan.isShortTerm ? "Higher" : "Moderate"}</li>`; if (!plan.isEnabled) featuresList += `<li><strong style="color:var(--accent-color);">Currently Disabled</strong></li>`; card.innerHTML = `<h3>${plan.name}</h3><p class="price-range">Invest: ${formatCurrencyValue(plan.minAmount, displayCurrency)} - ${formatCurrencyValue(plan.maxAmount, displayCurrency)}</p><p class="daily-profit">${profitDisplay}</p><ul>${featuresList}</ul>`; if (forDashboard && currentUser && currentUser.profile && currentUser.profile.role === 'user' && plan.isEnabled) { const investButton = document.createElement('button'); investButton.classList.add('button', 'button-small', 'button-full-width'); let canInvest = (currentUser.profile.wallet_balance || 0) >= plan.minAmount; if (!canInvest) { investButton.innerHTML = `<i class="fas fa-times-circle"></i> Need ${formatCurrencyValue(plan.minAmount, displayCurrency)}`; investButton.disabled = true; investButton.title = `Insufficient balance. Need ${formatCurrencyValue(plan.minAmount, displayCurrency)}.`; } else { investButton.innerHTML = `<i class="fas fa-hand-holding-usd"></i> Invest`; } investButton.onclick = () => openInvestmentModal(plan.id); card.appendChild(investButton); } containerElement.appendChild(card); if (plan.isEnabled) hasVisiblePlans = true; }); if (!hasVisiblePlans && !forDashboard) { containerElement.innerHTML = '<p class="text-center" style="grid-column: 1 / -1; padding: 20px;">No investment plans currently available.</p>'; } }
+window.openModal = function(modalId) { const modal = document.getElementById(modalId); if (!modal) return; modal.style.display = 'flex'; document.body.style.overflow = 'hidden'; if (modalId === 'withdrawalModal' && currentUser && currentUser.profile && currentUser.profile.role === 'user' && dashboardElements.withdrawalAvailableBalance) { dashboardElements.withdrawalAvailableBalance.textContent = formatCurrencyValue(currentUser.profile.wallet_balance || 0); } if (modalId === 'userSupportTicketModal') { displayUserSupportTicketsView(); } updateCurrencyDisplays(); updateWithdrawalLimitsDisplay(); };
+window.closeModal = function(modalId) { const modal = document.getElementById(modalId); if (!modal) return; modal.style.display = 'none'; document.body.style.overflow = 'auto'; const form = modal.querySelector('form'); if (form) { form.reset(); form.querySelectorAll('input.input-error').forEach(input => input.classList.remove('input-error')); const messageElKey = modalId.replace('Modal', '').toLowerCase(); const messageEl = dashboardElements.messageElements[messageElKey]; if (messageEl) clearFormMessage(messageEl); if (modalId === 'depositModal') { dashboardElements.depositDetailsDisplay?.classList.add('hidden'); dashboardElements.depositProofGroup?.classList.add('hidden'); document.getElementById('deposit-loader')?.classList.add('hidden'); const proofInput = document.getElementById('deposit-proof'); if(proofInput) proofInput.required = false; } else if (modalId === 'withdrawalModal') { document.getElementById('withdrawal-loader')?.classList.add('hidden'); const feeInfo = document.getElementById('withdrawal-fee-info');  if (feeInfo) feeInfo.textContent = `A ${NFX_CONFIG.withdrawalFeePercent}% withdrawal fee will be applied.`; } if (dashboardElements.qrCodeContainer) dashboardElements.qrCodeContainer.classList.add('hidden'); if (dashboardElements.verify2FACodeInput) dashboardElements.verify2FACodeInput.value = ''; }};
+window.onclick = function (event) { if (event.target.classList.contains('modal')) { window.closeModal(event.target.id); }};
+if (dashboardElements.depositMethodSelect) dashboardElements.depositMethodSelect.addEventListener('change', function () { const method = this.value; if (dashboardElements.depositDetailsDisplay) dashboardElements.depositDetailsDisplay.innerHTML = ''; if (dashboardElements.depositProofGroup) dashboardElements.depositProofGroup.classList.add('hidden'); const proofInput = document.getElementById('deposit-proof'); if (!proofInput) return; if (method && NFX_CONFIG.depositMethodsDetails[method]) { if (dashboardElements.depositDetailsDisplay) { dashboardElements.depositDetailsDisplay.innerHTML = `<p><strong>Instructions for ${method.toUpperCase()}:</strong></p>${NFX_CONFIG.depositMethodsDetails[method].replace('Your User ID', currentUser ? currentUser.authUser.id : 'YOUR_USER_ID')}`; dashboardElements.depositDetailsDisplay.classList.remove('hidden'); } if (dashboardElements.depositProofGroup) { dashboardElements.depositProofGroup.classList.remove('hidden'); proofInput.required = true;  } } else { if (dashboardElements.depositDetailsDisplay) dashboardElements.depositDetailsDisplay.classList.add('hidden'); if (dashboardElements.depositProofGroup) dashboardElements.depositProofGroup.classList.add('hidden'); proofInput.required = false; } });
+if (dashboardElements.depositForm) dashboardElements.depositForm.addEventListener('submit', async function (e) { e.preventDefault(); if (!currentUser || !currentUser.profile || currentUser.profile.role !== 'user') { window.showToast("Action not available.", "error"); return; } const amountInput = document.getElementById('deposit-amount'); const methodInput = document.getElementById('deposit-method'); const proofInput = document.getElementById('deposit-proof');  if (!amountInput || !methodInput || !proofInput) return; amountInput.classList.remove('input-error'); const amount = parseFloat(amountInput.value); const method = methodInput.value; const proofFile = proofInput.files[0];  const displayCurrency = getUserDisplayCurrency(); if (isNaN(amount) || amount <= 0) { displayFormMessage(dashboardElements.messageElements.deposit, "Enter a valid amount.", "error"); amountInput.classList.add('input-error'); return; } if (!method) { displayFormMessage(dashboardElements.messageElements.deposit, "Select a payment method.", "error"); return; } if (method && !proofFile) { displayFormMessage(dashboardElements.messageElements.deposit, "Please upload proof of payment.", "error"); proofInput.classList.add('input-error'); return; } if (dashboardElements.messageElements.deposit) clearFormMessage(dashboardElements.messageElements.deposit); const loader = document.getElementById('deposit-loader'); if (loader) loader.classList.remove('hidden'); try { const newTransaction = { user_id: currentUser.authUser.id, description: `Deposit via ${method}`, amount: amount, currency: displayCurrency.code,  type: 'deposit', status: 'pending', method: method, proof_filename: proofFile ? proofFile.name : "N/A",  tx_type_indicator: 'credit' }; const { error: txError } = await supabase.from(DB_TABLES.TRANSACTIONS).insert(newTransaction); if (txError) throw txError; if (loader) loader.classList.add('hidden'); window.showToast("Deposit request submitted for approval.", "success"); await addUserSystemNotificationToDB('admin_group', `New deposit: ${formatCurrencyValue(amount, displayCurrency)} from ${currentUser.authUser.email}.`, 'admin'); displayFormMessage(dashboardElements.messageElements.deposit, "Deposit request submitted. Awaiting admin approval.", "success"); if (sections.dashboard && !sections.dashboard.classList.contains('hidden')) await loadDashboard();  dashboardElements.depositForm.reset(); if(dashboardElements.depositDetailsDisplay) dashboardElements.depositDetailsDisplay.classList.add('hidden'); if(dashboardElements.depositProofGroup) dashboardElements.depositProofGroup.classList.add('hidden'); if(proofInput) proofInput.required = false; } catch (error) { console.error("Deposit error:", error); if (loader) loader.classList.add('hidden'); window.showToast(error.message || "Deposit request failed.", "error"); displayFormMessage(dashboardElements.messageElements.deposit, error.message || "Deposit request failed.", "error"); } });
+if (dashboardElements.withdrawalForm) dashboardElements.withdrawalForm.addEventListener('submit', async function (e) { e.preventDefault(); if (!currentUser || !currentUser.profile || currentUser.profile.role !== 'user') { window.showToast("Action not available.", "error"); return; } const amountInput = document.getElementById('withdrawal-amount'); const methodInput = document.getElementById('withdrawal-method'); const detailsInput = document.getElementById('withdrawal-details'); const feeInfoEl = document.getElementById('withdrawal-fee-info'); const loaderEl = document.getElementById('withdrawal-loader'); const displayCurrency = getUserDisplayCurrency(); if (!amountInput || !methodInput || !detailsInput || !feeInfoEl || !loaderEl) return; amountInput.classList.remove('input-error'); detailsInput.classList.remove('input-error'); const requestedAmount = parseFloat(amountInput.value); const method = methodInput.value; const details = detailsInput.value.trim(); if (isNaN(requestedAmount) || requestedAmount < NFX_CONFIG.minWithdrawalAmount || requestedAmount > NFX_CONFIG.maxWithdrawalAmount) { displayFormMessage(dashboardElements.messageElements.withdrawal, `Amount must be between ${formatCurrencyValue(NFX_CONFIG.minWithdrawalAmount, displayCurrency)} and ${formatCurrencyValue(NFX_CONFIG.maxWithdrawalAmount, displayCurrency)}.`, "error"); amountInput.classList.add('input-error'); return; } if (requestedAmount > (currentUser.profile.wallet_balance || 0)) { displayFormMessage(dashboardElements.messageElements.withdrawal, "Insufficient available balance.", "error"); amountInput.classList.add('input-error'); return; } if (!method) { displayFormMessage(dashboardElements.messageElements.withdrawal, "Select a withdrawal method.", "error"); return; } if (!details) { displayFormMessage(dashboardElements.messageElements.withdrawal, "Provide account/address details.", "error"); detailsInput.classList.add('input-error'); return; } const feeAmount = (requestedAmount * NFX_CONFIG.withdrawalFeePercent) / 100; const netAmount = requestedAmount - feeAmount; feeInfoEl.textContent = `Requested: ${formatCurrencyValue(requestedAmount, displayCurrency)}, Fee (${NFX_CONFIG.withdrawalFeePercent}%): ${formatCurrencyValue(feeAmount, displayCurrency)}, Net: ${formatCurrencyValue(netAmount, displayCurrency)}`; if (dashboardElements.messageElements.withdrawal) clearFormMessage(dashboardElements.messageElements.withdrawal); loaderEl.classList.remove('hidden'); try { const newTransaction = { user_id: currentUser.authUser.id, description: `Withdrawal to ${method}`, amount: requestedAmount, fee: feeAmount, net_amount: netAmount, currency: displayCurrency.code, type: 'withdrawal', status: 'pending', method: method, details: details,  tx_type_indicator: 'debit' }; const { error: txError } = await supabase.from(DB_TABLES.TRANSACTIONS).insert(newTransaction); if (txError) throw txError; loaderEl.classList.add('hidden'); await addUserSystemNotificationToDB( 'admin_group', `New withdrawal: ${formatCurrencyValue(requestedAmount, displayCurrency)} from ${currentUser.authUser.email}.`, 'admin', true ); const successMessage = `Request for ${formatCurrencyValue(requestedAmount, displayCurrency)} submitted. Your request will be processed within 24 hours.`; displayFormMessage(dashboardElements.messageElements.withdrawal, successMessage, "success"); window.showToast(successMessage, "success", 6000); if (sections.dashboard && !sections.dashboard.classList.contains('hidden')) await loadDashboard(); dashboardElements.withdrawalForm.reset(); } catch (error) { console.error("Withdrawal error:", error); loaderEl.classList.add('hidden'); window.showToast(error.message || "Withdrawal request failed.", "error"); displayFormMessage(dashboardElements.messageElements.withdrawal, error.message || "Withdrawal request failed.", "error"); } });
+async function addUserSystemNotificationToDB(targetUserIdOrGroup, message, type = 'info', isForAdmin = false, ticketId = null) {
+    if (isForAdmin || targetUserIdOrGroup === 'admin_group') {
+        try {
+            const { error } = await supabase.functions.invoke('create-admin-notification', {
+                body: { message, type, ticket_id: ticketId }
+            });
+            if (error) throw error;
+        } catch (error) {
+            console.error("Error invoking Edge Function to create admin notification:", error);
+        }
+    } else {
+        const notificationPayload = { user_id: targetUserIdOrGroup, message, type, read: false, ticket_id: ticketId, };
+        try {
+            const { error } = await supabase.from(DB_TABLES.NOTIFICATIONS).insert(notificationPayload);
+            if (error) throw error;
+            if (currentUser && currentUser.authUser.id === targetUserIdOrGroup) {
+                await loadUserNotifications();
+            }
+        } catch (error) {
+            console.error("Error adding system notification to DB:", error);
+        }
+    }
+}
+async function loadUserNotifications() { if (!currentUser || !currentUser.authUser || !dashboardElements.userNotificationBell || !dashboardElements.notificationsList || !dashboardElements.notificationCountBadge) return; try { const { data: notifications, error } = await supabase.from(DB_TABLES.NOTIFICATIONS).select('*').eq('user_id', currentUser.authUser.id).order('created_at', { ascending: false }).limit(30); if (error) throw error; dashboardElements.notificationsList.innerHTML = ''; let unreadCount = 0; if (!notifications || notifications.length === 0) { dashboardElements.notificationsList.innerHTML = '<p class="no-notifications">No new notifications.</p>'; dashboardElements.notificationCountBadge.style.display = 'none'; return; } notifications.forEach(notif => { if (!notif.read) unreadCount++; const item = document.createElement('div'); item.classList.add('notification-item'); if (!notif.read) item.classList.add('unread'); item.innerHTML = `<p>${notif.message}</p><p class="timestamp">${formatDate(notif.created_at, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>`; item.onclick = () => handleNotificationClick(notif.id, notif.ticket_id);  dashboardElements.notificationsList.appendChild(item); }); if (unreadCount > 0) { dashboardElements.notificationCountBadge.textContent = String(unreadCount); dashboardElements.notificationCountBadge.style.display = 'block'; } else { dashboardElements.notificationCountBadge.style.display = 'none'; } } catch (error) { console.error("Error loading user notifications:", error); dashboardElements.notificationsList.innerHTML = '<p class="no-notifications">Error loading notifications.</p>'; } }
+window.toggleNotificationsDropdown = function (event) { event.stopPropagation(); if (dashboardElements.notificationsDropdownContainer) { dashboardElements.notificationsDropdownContainer.classList.toggle('show'); } };
+async function handleNotificationClick(notificationDbId, ticketDbId) { await markNotificationAsRead(notificationDbId);  if (ticketDbId) {  if (currentUser.profile.role === 'super_admin' || currentUser.profile.role === 'assistant_admin') { window.showAdminMainTab('supportTickets', document.querySelector('.admin-tab-button[data-tab-target="supportTickets"]')); await openAdminSupportTicketModal(ticketDbId); } else { window.openModal('userSupportTicketModal'); await displayUserTicketChatView(ticketDbId); } } if (dashboardElements.notificationsDropdownContainer) { dashboardElements.notificationsDropdownContainer.classList.remove('show'); } }
+async function markNotificationAsRead(notificationDbId) { if (!currentUser) return; try { const { error } = await supabase.from(DB_TABLES.NOTIFICATIONS).update({ read: true }).eq('id', notificationDbId).eq('user_id', currentUser.authUser.id);  if (error) throw error; await loadUserNotifications();  } catch (error) { console.error("Error marking notification as read:", error); } }
+async function loadDashboard() { if (!currentUser || !currentUser.profile || currentUser.profile.role !== 'user') { window.showToast("Access denied or not a regular user.", "error"); window.navigateToSection('login', 'nav-login'); return; } window.navigateToSection('dashboard', 'nav-dashboard'); clearAllCountdowns(); await checkAndLockCurrency();  const displayCurrency = getUserDisplayCurrency(); displayBroadcastMessage();  await loadUserNotifications(); const userProfile = currentUser.profile; const authUser = currentUser.authUser; if (dashboardElements.welcome) dashboardElements.welcome.textContent = `Welcome, ${userProfile.full_name}!`; if (dashboardElements.userName) dashboardElements.userName.textContent = userProfile.full_name; if (dashboardElements.userEmail) dashboardElements.userEmail.textContent = authUser.email; if (dashboardElements.memberSince) dashboardElements.memberSince.textContent = formatDate(authUser.created_at, { year: 'numeric', month: 'long', day: 'numeric' }); if (dashboardElements.referralCode) { dashboardElements.referralCode.textContent = userProfile.referral_code; dashboardElements.referralCode.onclick = () => copyToClipboard(userProfile.referral_code); } if (dashboardElements.lastLogin) dashboardElements.lastLogin.textContent = userProfile.last_login_at ? formatDate(userProfile.last_login_at) : formatDate(authUser.created_at);  if (userProfile.profile_pic_url) { const { data: publicUrlData } = supabase.storage.from('avatars').getPublicUrl(userProfile.profile_pic_url); dashboardElements.dashProfilePic.src = publicUrlData.publicUrl; dashboardElements.dashProfilePic.classList.remove('hidden'); dashboardElements.dashProfilePicPlaceholder.classList.add('hidden'); } else { dashboardElements.dashProfilePic.classList.add('hidden'); dashboardElements.dashProfilePicPlaceholder.classList.remove('hidden'); } if (userProfile.referred_by_user_id && dashboardElements.referredByContainer && dashboardElements.referredBy) { try { const { data: referrer, error: refError } = await supabase.from(DB_TABLES.PROFILES).select('full_name, email').eq('id', userProfile.referred_by_user_id).single(); if (refError && refError.code !== 'PGRST116') throw refError; if (referrer) { dashboardElements.referredBy.textContent = `${referrer.full_name} (...${referrer.email.slice(-10)})`; dashboardElements.referredByContainer.classList.remove('hidden'); } else { dashboardElements.referredByContainer.classList.add('hidden'); } } catch (error) { console.error("Error fetching referrer info:", error); dashboardElements.referredByContainer.classList.add('hidden'); } } else if (dashboardElements.referredByContainer) { dashboardElements.referredByContainer.classList.add('hidden'); } if (dashboardElements.walletActualBalance) dashboardElements.walletActualBalance.textContent = formatCurrencyValue(userProfile.wallet_balance || 0, displayCurrency); let totalInvestedActive = 0; if (userProfile.investments && userProfile.investments.length > 0) { totalInvestedActive = userProfile.investments.filter(inv => inv.status === 'active').reduce((sum, inv) => sum + inv.amount, 0); } if (dashboardElements.walletInvestedAmount) dashboardElements.walletInvestedAmount.textContent = formatCurrencyValue(totalInvestedActive, displayCurrency); if (dashboardElements.walletRealizedProfit) dashboardElements.walletRealizedProfit.textContent = formatCurrencyValue(userProfile.total_realized_profit || 0, displayCurrency); if (dashboardElements.activeInvestmentsList && dashboardElements.activeInvestmentsCount && dashboardElements.noInvestmentMessage) { dashboardElements.activeInvestmentsList.innerHTML = ''; const activeUserInvestments = userProfile.investments ? userProfile.investments.filter(inv => ['active', 'matured_unclaimed'].includes(inv.status)) : []; if (activeUserInvestments.length > 0) { dashboardElements.activeInvestmentsCount.textContent = String(activeUserInvestments.length); dashboardElements.noInvestmentMessage.classList.add('hidden'); activeUserInvestments.forEach(inv => displaySingleInvestment(inv));  } else { dashboardElements.activeInvestmentsCount.textContent = '0'; dashboardElements.noInvestmentMessage.classList.remove('hidden'); } } if (dashboardElements.profileSettingsCard) { dashboardElements.profileSettingsCard.classList.remove('hidden'); } const profileNameInput = document.getElementById('profile-setting-name'); if (forms.profileSettings && dashboardElements.profile2FAToggle && dashboardElements.profile2FAStatus && profileNameInput) { profileNameInput.value = userProfile.full_name; dashboardElements.profile2FAToggle.checked = userProfile.is_2fa_enabled || false; dashboardElements.profile2FAStatus.textContent = (userProfile.is_2fa_enabled || false) ? "Enabled" : "Disabled"; if (userProfile.is_2fa_enabled && dashboardElements.qrCodeContainer) {  dashboardElements.qrCodeContainer.classList.add('hidden'); } } if (dashboardElements.profitCalculatorCard) { dashboardElements.profitCalculatorCard.classList.remove('hidden'); } populateProfitCalculatorPlans();  if (dashboardElements.profitCalcResultsDisplay) dashboardElements.profitCalcResultsDisplay.classList.add('hidden'); if (dashboardElements.profitCalcAmountInput) dashboardElements.profitCalcAmountInput.value = ''; loadAndDisplayFinancialGoal();  if (planDisplays.dashboard) renderPlans(planDisplays.dashboard, true);  window.renderTransactionHistory('all', document.querySelector('#dashboard-section .tx-history-tab-button.active'));  renderAccountGrowthChart();  updateCurrencyDisplays(); updateWithdrawalLimitsDisplay(); await loadUserSupportTicketsBrief(); }
+function displaySingleInvestment(investment) { if (!dashboardElements.activeInvestmentsList) return; const displayCurrency = getUserDisplayCurrency(); const investmentCurrencyObj = NFX_CONFIG.currencies.find(c => c.code === investment.currency) || displayCurrency; if (!investment.plan_name) { console.error(`Plan name missing for investment ${investment.id}`); return; } let profitRateText = ''; let durationText = ''; if (investment.is_short_term) { profitRateText = `${investment.total_profit_percent_short_term}% (Total)`; if (investment.daily_profit_fixed_short_term > 0) profitRateText += ` / ${formatCurrencyValue(investment.daily_profit_fixed_short_term, getGlobalDisplayCurrency())} daily fixed`; else if (investment.daily_profit_percent_short_term > 0) profitRateText += ` / ${investment.daily_profit_percent_short_term}% daily`; durationText = (investment.duration_days_short_term > 0 ? `${investment.duration_days_short_term} Days ` : '') + (investment.duration_minutes_short_term > 0 ? `${investment.duration_minutes_short_term} Mins` : ''); if (!durationText) durationText = "Short period"; } else { if (investment.daily_profit_fixed_long_term > 0) { profitRateText = `${formatCurrencyValue(investment.daily_profit_fixed_long_term, getGlobalDisplayCurrency())} (Daily Fixed)`; } else if (investment.daily_profit_percent_long_term > 0){ profitRateText = `${investment.daily_profit_percent_long_term}% (Daily %)` } else if (investment.total_profit_percent_long_term > 0) { profitRateText = `${investment.total_profit_percent_long_term}% (Total)`; } durationText = `${investment.duration_days_long_term} Days`; } durationText = durationText.trim(); const itemDiv = document.createElement('div'); itemDiv.classList.add('active-investment-item'); itemDiv.id = `investment-item-${investment.id}`;  itemDiv.innerHTML = `<h4>${investment.plan_name} (ID: ...${String(investment.id).slice(-6)})</h4><p>Invested: <strong id="invested-amount-${investment.id}">${formatCurrencyValue(investment.amount, investmentCurrencyObj)}</strong></p><p>Start Date: <span id="investment-date-${investment.id}">${formatDate(investment.start_date)}</span></p><p>Duration: <span id="plan-duration-${investment.id}">${durationText}</span></p><div class="investment-progress-bar"><div id="progress-fill-${investment.id}" class="investment-progress"></div></div><p>Time Invested: <strong id="days-invested-${investment.id}">0</strong> (<span id="progress-text-${investment.id}">0%</span>)</p><p>Profit Rate: <strong id="profit-rate-${investment.id}">${profitRateText}</strong></p><p>Accumulated Profit: <strong id="acc-profit-${investment.id}">${formatCurrencyValue(investment.accumulated_profit || 0, investmentCurrencyObj)}</strong></p><hr style="margin: 8px 0; border-color: var(--border-color);"><p>Maturity Date: <strong id="maturity-date-${investment.id}">N/A</strong></p><div class="countdown-timer" id="maturity-countdown-${investment.id}">Matures in: calculating...</div><p style="margin-top:5px;">Next Profit In: <strong class="countdown-timer" id="next-profit-countdown-${investment.id}">calculating...</strong></p><div id="maturity-status-${investment.id}" style="margin-top:10px;"></div>`; dashboardElements.activeInvestmentsList.appendChild(itemDiv); calculateAndDisplaySingleInvestmentProgress(investment.id);  }
+async function handleInvestmentSelection(planId, amount) { try { const plan = NFX_CONFIG.investmentPlans.find(p => p.id === planId); if (!plan || !plan.isEnabled) throw new Error("Invalid or disabled plan selected."); const displayCurrency = getUserDisplayCurrency(); const investmentDate = new Date().toISOString(); const newInvestmentData = { user_id: currentUser.authUser.id, plan_id: plan.id,  plan_name: plan.name,  amount: amount, currency: displayCurrency.code, start_date: investmentDate, accumulated_profit: 0, maturity_notified: false, status: 'active',  is_short_term: plan.isShortTerm, duration_days_long_term: plan.durationDaysLongTerm, daily_profit_percent_long_term: plan.dailyProfitPercentLongTerm, daily_profit_fixed_long_term: plan.dailyProfitFixedLongTerm, total_profit_percent_long_term: plan.totalProfitPercentLongTerm, duration_days_short_term: plan.durationDaysShortTerm, duration_minutes_short_term: plan.durationMinutesShortTerm, total_profit_percent_short_term: plan.totalProfitPercentShortTerm, daily_profit_percent_short_term: plan.dailyProfitPercentShortTerm, daily_profit_fixed_short_term: plan.dailyProfitFixedShortTerm, }; const { data: insertedInvestment, error: investmentError } = await supabase.from(DB_TABLES.USER_INVESTMENTS).insert(newInvestmentData).select().single(); if (investmentError) throw investmentError; const newWalletBalance = (currentUser.profile.wallet_balance || 0) - amount; const { error: balanceError } = await supabase.from(DB_TABLES.PROFILES).update({ wallet_balance: newWalletBalance, investments_count: (currentUser.profile.investments_count || 0) + 1 }).eq('id', currentUser.authUser.id); if (balanceError) { console.error("Error updating wallet balance after investment:", balanceError); window.showToast("Investment made, but balance update failed. Contact support.", "warning"); } else { currentUser.profile.wallet_balance = newWalletBalance; currentUser.profile.investments_count = (currentUser.profile.investments_count || 0) + 1; } await addTransactionToDB( currentUser.authUser.id, currentUser.authUser.email, 'investment_start',  `Invested in ${plan.name} (ID...${String(insertedInvestment.id).slice(-4)})`,  amount, 'approved', 'System', displayCurrency ); await checkAndLockCurrency();  window.showToast(`Successfully invested ${formatCurrencyValue(amount, displayCurrency)} in ${plan.name}!`, "success"); await loadDashboard();  } catch (error) { console.error("Investment selection error:", error); window.showToast(error.message || "Failed to make investment.", "error"); } }
+async function addTransactionToDB(userId, userEmail, type, description, amount, status = 'approved', method = 'System', transactionCurrencyObj, fee = 0, netAmount = null) { if (!userId) return; const currencyForTx = transactionCurrencyObj || getUserDisplayCurrency(); const newDbTransaction = { user_id: userId, description: description, amount: Math.abs(amount), currency: currencyForTx.code, type: type, status: status, tx_type_indicator: (amount >= 0 && (['deposit', 'profit_payout', 'investment_mature_credit', 'admin_credit', 'referral_bonus', 'admin_bonus'].includes(type) || (type === 'system_event' && amount > 0))) ? 'credit' : 'debit', method: method, fee: fee, net_amount: netAmount === null ? (type === 'withdrawal' ? Math.abs(amount) - fee : Math.abs(amount)) : netAmount, }; try { const { error } = await supabase.from(DB_TABLES.TRANSACTIONS).insert(newDbTransaction); if (error) throw error; if (currentUser && currentUser.authUser.id === userId) {  } } catch (error) { console.error("Error adding transaction to DB:", error); window.showToast("Failed to record transaction.", "error"); } }
+async function calculateAndDisplaySingleInvestmentProgress(investmentDbId) { if (!currentUser || !currentUser.profile || currentUser.profile.role !== 'user') return; const investment = currentUser.profile.investments ? currentUser.profile.investments.find(inv => inv.id === investmentDbId) : null; if (!investment) { console.error(`Investment ${investmentDbId} not found in local currentUser cache.`); return; }  const investmentCurrency = NFX_CONFIG.currencies.find(c => c.code === investment.currency) || getUserDisplayCurrency(); const progressFillEl = document.getElementById(`progress-fill-${investment.id}`); const maturityCountdownEl = document.getElementById(`maturity-countdown-${investment.id}`); const nextProfitCountdownEl = document.getElementById(`next-profit-countdown-${investment.id}`); const maturityStatusEl = document.getElementById(`maturity-status-${investment.id}`); if (!progressFillEl || !maturityCountdownEl || !nextProfitCountdownEl || !maturityStatusEl) { console.error("DOM elements missing for investment:", investmentDbId); return; } const startDate = new Date(investment.start_date); const now = new Date(); let timeDiffMs = now.getTime() - startDate.getTime(); timeDiffMs = Math.max(0, timeDiffMs); let totalDurationMs = 0; let currentProfit = investment.accumulated_profit || 0;  let progressPercent = 0; let maturityDate; let nextProfitDate; const daysInvestedEl = document.getElementById(`days-invested-${investment.id}`); const progressTextEl = document.getElementById(`progress-text-${investment.id}`); const accProfitEl = document.getElementById(`acc-profit-${investment.id}`); const maturityDateElDisplay = document.getElementById(`maturity-date-${investment.id}`); if (investment.is_short_term) { const totalDurationMinutes = (investment.duration_days_short_term * 24 * 60) + investment.duration_minutes_short_term; totalDurationMs = totalDurationMinutes * 60 * 1000; maturityDate = addTime(startDate, totalDurationMinutes, 'minutes'); if (timeDiffMs >= totalDurationMs) {  if (investment.status === 'active') {  currentProfit = (investment.amount * investment.total_profit_percent_short_term) / 100; if (investment.daily_profit_fixed_short_term > 0) currentProfit += (investment.daily_profit_fixed_short_term * (investment.duration_days_short_term || 0)); else if (investment.daily_profit_percent_short_term > 0) currentProfit += ((investment.amount * investment.daily_profit_percent_short_term / 100) * (investment.duration_days_short_term || 0)); try { const { error } = await supabase.from(DB_TABLES.USER_INVESTMENTS).update({ status: 'matured_unclaimed', accumulated_profit: currentProfit }).eq('id', investment.id).eq('user_id', currentUser.authUser.id);  if (error) throw error; investment.status = 'matured_unclaimed';  investment.accumulated_profit = currentProfit; } catch (dbError) { console.error("Error updating investment to matured_unclaimed:", dbError); } }  progressPercent = 100; if (nextProfitCountdownEl) nextProfitCountdownEl.textContent = "Matured"; } else {  if (investment.daily_profit_fixed_short_term > 0 || investment.daily_profit_percent_short_term > 0) { let unitDurationMs = 24 * 60 * 60 * 1000;  let profitCalcUnitPassed = Math.floor(timeDiffMs / unitDurationMs); profitCalcUnitPassed = Math.min(profitCalcUnitPassed, investment.duration_days_short_term || 0); currentProfit = investment.daily_profit_fixed_short_term > 0 ? profitCalcUnitPassed * investment.daily_profit_fixed_short_term : profitCalcUnitPassed * ((investment.amount * investment.daily_profit_percent_short_term) / 100); } else {  currentProfit = 0;  } progressPercent = totalDurationMs > 0 ? (timeDiffMs / totalDurationMs) * 100 : 0; if (nextProfitCountdownEl) nextProfitCountdownEl.textContent = "At Maturity"; } if (daysInvestedEl) { const minutesInvested = Math.floor(timeDiffMs / (60 * 1000)); const days = Math.floor(minutesInvested / (24 * 60)); const remainingMinutes = minutesInvested % (24 * 60); daysInvestedEl.textContent = (days > 0 ? `${days}d ` : '') + `${remainingMinutes}m`; } } else {  totalDurationMs = investment.duration_days_long_term * 24 * 60 * 60 * 1000; maturityDate = addTime(startDate, investment.duration_days_long_term, 'days'); let unitDurationMs = 24 * 60 * 60 * 1000;  let profitCalcUnitPassed = Math.floor(timeDiffMs / unitDurationMs); profitCalcUnitPassed = Math.min(profitCalcUnitPassed, investment.duration_days_long_term); let calculatedDailyBasedProfit = 0; if (investment.daily_profit_fixed_long_term > 0) { calculatedDailyBasedProfit = profitCalcUnitPassed * investment.daily_profit_fixed_long_term; } else if (investment.daily_profit_percent_long_term > 0) { calculatedDailyBasedProfit = profitCalcUnitPassed * ((investment.amount * investment.daily_profit_percent_long_term) / 100); } let calculatedTotalProfitAtMaturity = 0; if (investment.total_profit_percent_long_term > 0) { calculatedTotalProfitAtMaturity = (investment.amount * investment.total_profit_percent_long_term) / 100; } if (timeDiffMs >= totalDurationMs) {  if (investment.status === 'active') {  currentProfit = (calculatedDailyBasedProfit > 0) ? calculatedDailyBasedProfit : calculatedTotalProfitAtMaturity; try { const { error } = await supabase.from(DB_TABLES.USER_INVESTMENTS).update({ status: 'matured_unclaimed', accumulated_profit: currentProfit }).eq('id', investment.id).eq('user_id', currentUser.authUser.id); if (error) throw error; investment.status = 'matured_unclaimed'; investment.accumulated_profit = currentProfit; } catch (dbError) { console.error("Error updating long-term investment to matured_unclaimed:", dbError); } } progressPercent = 100; } else {  currentProfit = calculatedDailyBasedProfit;  } progressPercent = totalDurationMs > 0 ? (timeDiffMs / totalDurationMs) * 100 : 0; progressPercent = Math.min(100, progressPercent); if (daysInvestedEl) daysInvestedEl.textContent = `${profitCalcUnitPassed} days`; if (now < maturityDate && (investment.daily_profit_fixed_long_term > 0 || investment.daily_profit_percent_long_term > 0)) { const lastProfitTime = addTime(startDate, profitCalcUnitPassed, 'days'); nextProfitDate = addTime(lastProfitTime, 1, 'days'); } } if (progressFillEl) progressFillEl.style.width = `${progressPercent.toFixed(2)}%`; if (progressTextEl) progressTextEl.textContent = `${progressPercent.toFixed(1)}%`; if (accProfitEl) accProfitEl.textContent = formatCurrencyValue(currentProfit, investmentCurrency); if (maturityDateElDisplay) maturityDateElDisplay.textContent = formatDate(maturityDate); clearCountdown(`${investment.id}_maturity`); clearCountdown(`${investment.id}_nextProfit`); if (investment.status === 'matured_unclaimed' || (now >= maturityDate && investment.status !== 'claimed')) { if (maturityCountdownEl) maturityCountdownEl.textContent = "Plan Matured!"; if (maturityStatusEl && !maturityStatusEl.querySelector('button.button-success')) { maturityStatusEl.innerHTML = `<p style="color: var(--success-color); font-weight: bold;">Matured!</p><button class="button button-small button-success" onclick="window.handlePlanMaturity('${investment.id}')"><i class="fas fa-hand-holding-usd"></i> Claim</button>`; } if (!investment.maturity_notified) { const message = `Your '${investment.plan_name}' (ID: ...${String(investment.id).slice(-4)}) plan matured. Claim funds.`; window.showToast(`System Notification: ${message}`, 'info', 7000); await addUserSystemNotificationToDB(currentUser.authUser.id, message, 'success'); try { await supabase.from(DB_TABLES.USER_INVESTMENTS).update({ maturity_notified: true }).eq('id', investment.id).eq('user_id', currentUser.authUser.id); investment.maturity_notified = true;  } catch (dbError) { console.error("Error updating maturity_notified:", dbError); } } } else if (investment.status === 'active') {  if (maturityStatusEl) maturityStatusEl.innerHTML = `<p style="color: var(--info-color);">Active.</p>`; if (maturityCountdownEl) startCountdown(`${investment.id}_maturity`, maturityDate, maturityCountdownEl, "Matures in: "); if (nextProfitDate && now < nextProfitDate && !investment.is_short_term && nextProfitCountdownEl) { startCountdown(`${investment.id}_nextProfit`, nextProfitDate, nextProfitCountdownEl, "Next profit in: "); } else if (investment.is_short_term && nextProfitCountdownEl) { nextProfitCountdownEl.textContent = (investment.daily_profit_fixed_short_term > 0 || investment.daily_profit_percent_short_term > 0) ? "Daily (Opt.)" : "At Maturity"; } else if (nextProfitCountdownEl) { nextProfitCountdownEl.textContent = (now >= maturityDate) ? "Matured" : "Processing..."; } } else if (investment.status === 'claimed') { if (maturityCountdownEl) maturityCountdownEl.textContent = "Claimed"; if (maturityStatusEl) maturityStatusEl.innerHTML = `<p style="color: var(--success-color); font-weight:bold;">Funds Claimed</p>`; if(nextProfitCountdownEl) nextProfitCountdownEl.textContent = "-"; } }
+/**
+ * --- REFACTORED: `handlePlanMaturity` ---
+ * This function is now more robust. It performs DB updates sequentially to avoid race conditions
+ * and inconsistent data states that were causing errors. It ensures that all steps of crediting
+ * a user's account succeed in a predictable order.
+ */
+window.handlePlanMaturity = async function(investmentDbId) {
+    if (!currentUser || !currentUser.profile || currentUser.profile.role !== 'user' || !currentUser.profile.investments) return;
+    
+    const investmentIndex = currentUser.profile.investments.findIndex(inv => inv.id === investmentDbId);
+    if (investmentIndex === -1) {
+        window.showToast("Error: Investment not found.", "error");
+        return;
+    }
+    const investment = currentUser.profile.investments[investmentIndex];
+
+    if (investment.status !== 'matured_unclaimed') {
+        window.showToast("Plan not ready for claim or already claimed.", "warning");
+        return;
+    }
+    
+    const claimButton = document.querySelector(`#investment-item-${investment.id} button`);
+    if (claimButton) {
+        claimButton.disabled = true;
+        claimButton.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Claiming...`;
+    }
+
+    const investmentCurrency = NFX_CONFIG.currencies.find(c => c.code === investment.currency) || getUserDisplayCurrency();
+    const principal = investment.amount;
+    const finalProfit = investment.accumulated_profit || 0; // Use fallback
+    const totalReturn = principal + finalProfit;
+
+    try {
+        // --- Sequential Database Updates for Stability ---
+
+        // Step 1: Mark the investment as 'claimed'. This is the first gate.
+        const { error: invUpdateError } = await supabase.from(DB_TABLES.USER_INVESTMENTS)
+            .update({ status: 'claimed' })
+            .eq('id', investment.id)
+            .eq('user_id', currentUser.authUser.id);
+        if (invUpdateError) throw invUpdateError;
+
+        // Step 2: Update the user's profile with the new balance and profit.
+        const newWalletBalance = (currentUser.profile.wallet_balance || 0) + totalReturn;
+        const newTotalRealizedProfit = (currentUser.profile.total_realized_profit || 0) + finalProfit;
+        const newInvestmentsCount = Math.max(0, (currentUser.profile.investments_count || 1) - 1);
+        
+        const { error: profileUpdateError } = await supabase.from(DB_TABLES.PROFILES)
+            .update({
+                wallet_balance: newWalletBalance,
+                total_realized_profit: newTotalRealizedProfit,
+                investments_count: newInvestmentsCount
+            })
+            .eq('id', currentUser.authUser.id);
+        
+        if (profileUpdateError) {
+            // Best-effort rollback: If profile update fails, try to set investment back to matured_unclaimed.
+            await supabase.from(DB_TABLES.USER_INVESTMENTS).update({ status: 'matured_unclaimed' }).eq('id', investment.id);
+            throw profileUpdateError;
+        }
+
+        // Step 3: Add the transaction records for accounting. These are critical but if they fail, the user still got their money.
+        const txDescriptionPrincipal = `Matured ${investment.plan_name} (ID...${String(investment.id).slice(-4)}) - Principal`;
+        const txDescriptionProfit = `Matured ${investment.plan_name} (ID...${String(investment.id).slice(-4)}) - Profit`;
+        
+        await addTransactionToDB(currentUser.authUser.id, currentUser.authUser.email, 'investment_mature_credit', txDescriptionPrincipal, principal, 'approved', 'System', investmentCurrency);
+        await addTransactionToDB(currentUser.authUser.id, currentUser.authUser.email, 'profit_payout', txDescriptionProfit, finalProfit, 'approved', 'System', investmentCurrency);
+
+        // --- All DB operations successful, now update local state and UI ---
+        
+        currentUser.profile.wallet_balance = newWalletBalance;
+        currentUser.profile.total_realized_profit = newTotalRealizedProfit;
+        currentUser.profile.investments_count = newInvestmentsCount;
+        // Remove the investment from the local array to update UI instantly
+        currentUser.profile.investments.splice(investmentIndex, 1); 
+
+        const message = `Plan '${investment.plan_name}' finalized! ${formatCurrencyValue(totalReturn, investmentCurrency)} credited.`;
+        await addUserSystemNotificationToDB(currentUser.authUser.id, message, 'success');
+        window.showToast(message, "success", 6000);
+
+        await checkAndLockCurrency();
+        await loadDashboard(); // Reload dashboard to reflect all changes
+
+    } catch (error) {
+        console.error("Error handling plan maturity:", error);
+        window.showToast(error.message || "Failed to claim funds. Contact support.", "error");
+        // Re-enable the button if claiming fails
+        if (claimButton) {
+            claimButton.disabled = false;
+            claimButton.innerHTML = `<i class="fas fa-hand-holding-usd"></i> Claim`;
+        }
+    }
+};
+function startCountdown(timerKey, targetDate, element, prefix = "") {  if (!element) return; if (countdownIntervals[timerKey]) clearInterval(countdownIntervals[timerKey]); countdownIntervals[timerKey] = setInterval(() => { const now = new Date().getTime(); const distance = new Date(targetDate).getTime() - now; if (distance < 0) { clearInterval(countdownIntervals[timerKey]); element.textContent = prefix + (timerKey.includes('maturity') ? "Matured!" : "Processing..."); if (currentUser && currentUser.profile && currentUser.profile.role === 'user' && sections.dashboard && !sections.dashboard.classList.contains('hidden')) { const investmentIdFromKey = timerKey.substring(0, timerKey.lastIndexOf('_')); const investmentItemElement = document.getElementById(`investment-item-${investmentIdFromKey}`); if (investmentItemElement) { calculateAndDisplaySingleInvestmentProgress(investmentIdFromKey); }  } return; } const days = Math.floor(distance / (1000 * 60 * 60 * 24)); const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)); const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)); const seconds = Math.floor((distance % (1000 * 60)) / 1000); let countdownText = ""; if (days > 0) countdownText += `${days}d `; if (hours > 0 || days > 0) countdownText += `${hours}h `; countdownText += `${minutes}m ${seconds}s`; element.textContent = prefix + countdownText; }, 1000); }
+function clearCountdown(timerKey) { if (countdownIntervals[timerKey]) { clearInterval(countdownIntervals[timerKey]); delete countdownIntervals[timerKey]; } }
+function clearAllCountdowns() { for (const key in countdownIntervals) { clearInterval(countdownIntervals[key]); } countdownIntervals = {}; }
+window.renderTransactionHistory = function (filterType = 'all', clickedButton = null) { if (!currentUser || !currentUser.profile || ['super_admin', 'assistant_admin'].includes(currentUser.profile.role) ) return;  if (!dashboardElements.transactionTableBody || !dashboardElements.noTransactionsMessage) return; if (clickedButton) {  document.querySelectorAll('#dashboard-section .tx-history-tab-button').forEach(btn => btn.classList.remove('active'));  clickedButton.classList.add('active');  } const displayCurrency = getUserDisplayCurrency(); dashboardElements.transactionTableBody.innerHTML = ''; const userTransactions = currentUser.profile.transactions || []; if (userTransactions.length === 0) {  dashboardElements.noTransactionsMessage.textContent = "No transactions yet."; dashboardElements.noTransactionsMessage.classList.remove('hidden');  return;  } let filteredTxs = userTransactions.filter(tx => !['system_event', 'profile_update', 'security_update'].includes(tx.type)); if (filterType === 'deposit') filteredTxs = filteredTxs.filter(tx => tx.type === 'deposit'); else if (filterType === 'withdrawal') filteredTxs = filteredTxs.filter(tx => tx.type === 'withdrawal'); else if (filterType === 'earnings') filteredTxs = filteredTxs.filter(tx => ['profit_payout', 'investment_mature_credit', 'referral_bonus'].includes(tx.type)); else if (filterType === 'bonus') filteredTxs = filteredTxs.filter(tx => tx.type === 'admin_bonus'); if (filteredTxs.length === 0) { dashboardElements.noTransactionsMessage.textContent = `No transactions for filter: ${filterType}.`; dashboardElements.noTransactionsMessage.classList.remove('hidden'); return; } dashboardElements.noTransactionsMessage.classList.add('hidden'); filteredTxs.sort((a,b) => new Date(b.created_at) - new Date(a.created_at)).forEach(tx => {  const row = dashboardElements.transactionTableBody.insertRow(); const txCurrency = NFX_CONFIG.currencies.find(c => c.code === tx.currency) || displayCurrency; row.insertCell().textContent = formatDate(tx.created_at, { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }); row.insertCell().textContent = tx.description; const amountCell = row.insertCell(); amountCell.textContent = formatCurrencyValue(tx.amount, txCurrency); amountCell.classList.add(tx.tx_type_indicator === 'credit' ? 'amount-credit' : 'amount-debit'); const statusCell = row.insertCell(); statusCell.textContent = tx.status.charAt(0).toUpperCase() + tx.status.slice(1); statusCell.classList.add(`status-${tx.status}`); row.insertCell().textContent = tx.type.replace(/_/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '); }); };
+/**
+ * --- NEW FEATURE: `exportTransactionsToPDF` ---
+ * Generates a PDF of the user's complete transaction history.
+ * REQUIRES jspdf & jspdf-autotable libraries to be included in index.html.
+ */
+async function exportTransactionsToPDF() {
+    if (!currentUser || !currentUser.profile) {
+        return window.showToast("You must be logged in to export.", "error");
+    }
+    if (typeof window.jspdf === 'undefined' || typeof window.jspdf.jsPDF === 'undefined' || typeof window.jspdf.jsPDF.autoTable === 'undefined') {
+        console.error("jsPDF or jsPDF-AutoTable is not loaded.");
+        return window.showToast("PDF export feature is currently unavailable. Please contact support.", "error");
+    }
+
+    window.showToast("Generating PDF...", "info");
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const user = currentUser.profile;
+    const transactions = user.transactions || [];
+    const displayCurrency = getUserDisplayCurrency();
+
+    // Document Header
+    doc.setFontSize(18);
+    doc.text(`${NFX_CONFIG.appName} - Transaction Statement`, 14, 22);
+    doc.setFontSize(11);
+    doc.text(`User: ${user.full_name} (${user.email})`, 14, 30);
+    doc.text(`Date Generated: ${new Date().toLocaleDateString()}`, 14, 36);
+
+    // Table
+    const tableColumn = ["Date", "Description", "Type", "Status", "Amount"];
+    const tableRows = [];
+
+    transactions
+        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+        .forEach(tx => {
+            const txCurrency = NFX_CONFIG.currencies.find(c => c.code === tx.currency) || displayCurrency;
+            const amountText = (tx.tx_type_indicator === 'credit' ? '+' : '-') + formatCurrencyValue(tx.amount, txCurrency);
+            const typeText = tx.type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+
+            const txData = [
+                formatDate(tx.created_at, { year: 'numeric', month: 'short', day: 'numeric' }),
+                tx.description,
+                typeText,
+                tx.status.charAt(0).toUpperCase() + tx.status.slice(1),
+                amountText
+            ];
+            tableRows.push(txData);
+        });
+
+    doc.autoTable({
+        head: [tableColumn],
+        body: tableRows,
+        startY: 50,
+        theme: 'striped',
+        headStyles: { fillColor: [41, 128, 185] },
+        didParseCell: function(data) {
+            // Color code the amount column
+            if (data.column.dataKey === "Amount") {
+                if (data.cell.raw.startsWith('+')) {
+                    data.cell.styles.textColor = [0, 128, 0]; // Green for credit
+                } else if (data.cell.raw.startsWith('-')) {
+                    data.cell.styles.textColor = [200, 0, 0]; // Red for debit
+                }
+            }
+        }
+    });
+
+    // Document Footer
+    let finalY = doc.lastAutoTable.finalY || 280;
+    doc.setFontSize(10);
+    doc.text(`This is an auto-generated document from ${NFX_CONFIG.appName}.`, 14, finalY + 10);
+
+    // Save the PDF
+    doc.save(`NFX-Transactions-${user.email}-${new Date().toISOString().slice(0, 10)}.pdf`);
+    window.showToast("PDF download started!", "success");
+}
+function renderAccountGrowthChart() { if (!currentUser || !currentUser.profile || ['super_admin', 'assistant_admin'].includes(currentUser.profile.role)) return; const chartEl = document.getElementById('accountGrowthChart'); if (!chartEl) return; if (accountGrowthChartInstance) accountGrowthChartInstance.destroy(); const ctx = chartEl.getContext('2d'); const displayCurrency = getUserDisplayCurrency(); const dataPoints = [{ date: new Date(currentUser.authUser.created_at), balance: 0 }];  let currentRunningBalance = 0; const sortedTransactions = (currentUser.profile.transactions || []).filter(tx => tx.status === 'approved' && ['deposit', 'withdrawal', 'profit_payout', 'investment_mature_credit', 'referral_bonus', 'admin_bonus', 'admin_credit'].includes(tx.type)).sort((a, b) => new Date(a.created_at) - new Date(b.created_at)); sortedTransactions.forEach(tx => { if (tx.tx_type_indicator === 'credit') currentRunningBalance += tx.amount; else if (tx.tx_type_indicator === 'debit' && tx.type !== 'investment_start') currentRunningBalance -= tx.amount;  dataPoints.push({ date: new Date(tx.created_at), balance: currentRunningBalance }); }); if (dataPoints.length > 0) { const lastTxDate = new Date(dataPoints[dataPoints.length - 1].date); if (new Date() > lastTxDate || dataPoints[dataPoints.length - 1].balance !== (currentUser.profile.wallet_balance || 0)) { dataPoints.push({ date: new Date(), balance: currentUser.profile.wallet_balance || 0 }); } } else {  dataPoints.push({ date: new Date(), balance: currentUser.profile.wallet_balance || 0 }); } accountGrowthChartInstance = new Chart(ctx, { type: 'line', data: { labels: dataPoints.map(dp => formatDate(dp.date, { month: 'short', day: 'numeric' })), datasets: [{ label: `Account Balance (${displayCurrency.code})`, data: dataPoints.map(dp => dp.balance.toFixed(2)), borderColor: 'var(--primary-color)', backgroundColor: 'rgba(41, 128, 185, 0.1)', tension: 0.1, fill: true }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { callback: value => formatCurrencyValue(value, displayCurrency) } } } } }); }
+if (forms.financialGoal) forms.financialGoal.addEventListener('submit', async (e) => { e.preventDefault(); if (!currentUser || !currentUser.profile || currentUser.profile.role !== 'user') return; const amountInput = document.getElementById('financial-goal-amount'); const descriptionInput = document.getElementById('financial-goal-description'); const amount = parseFloat(amountInput.value); const description = descriptionInput.value.trim(); if (isNaN(amount) || amount < 0) { window.showToast("Invalid goal amount.", "error"); return; } if (!description && amount > 0) { window.showToast("Please provide a description for your goal.", "warning"); return; } const newFinancialGoal = (amount === 0 && !description) ? null : { amount, description }; try { const { error } = await supabase.from(DB_TABLES.PROFILES).update({ financial_goal: newFinancialGoal }).eq('id', currentUser.authUser.id); if (error) throw error; currentUser.profile.financial_goal = newFinancialGoal;  loadAndDisplayFinancialGoal(); window.showToast(newFinancialGoal ? "Financial goal updated!" : "Financial goal cleared.", "success"); } catch (error) { console.error("Error updating financial goal:", error); window.showToast(error.message || "Failed to update financial goal.", "error"); } });
+function loadAndDisplayFinancialGoal() { if (!currentUser || !currentUser.profile || !dashboardElements.financialGoalDisplay) return; const goal = currentUser.profile.financial_goal;  if (goal && goal.amount > 0) { const displayCurrency = getUserDisplayCurrency(); dashboardElements.financialGoalTextDesc.textContent = goal.description; dashboardElements.financialGoalTextAmount.textContent = formatCurrencyValue(goal.amount, displayCurrency); const progress = Math.min(100, ((currentUser.profile.wallet_balance || 0) / goal.amount) * 100); dashboardElements.financialGoalProgressFill.style.width = `${progress.toFixed(1)}%`; dashboardElements.financialGoalProgressFill.textContent = `${progress.toFixed(1)}%`; dashboardElements.financialGoalDisplay.classList.remove('hidden'); } else { dashboardElements.financialGoalDisplay.classList.add('hidden'); } }
+function displayBroadcastMessage() { if (!dashboardElements.broadcastBanner || !dashboardElements.broadcastText) return; const broadcastData = NFX_CONFIG.activeBroadcastMessage;  if (broadcastData && broadcastData.text) { dashboardElements.broadcastText.innerHTML = `<strong>Announcement:</strong> ${broadcastData.text} <em>(Posted: ${formatDate(broadcastData.timestamp)})</em>`; dashboardElements.broadcastBanner.classList.remove('hidden'); } else { dashboardElements.broadcastBanner.classList.add('hidden'); } }
+if (forms.profileSettings) forms.profileSettings.addEventListener('submit', async (e) => { e.preventDefault(); if (!currentUser || !currentUser.profile) return; const newNameInput = document.getElementById('profile-setting-name'); const picFileInput = dashboardElements.profileSettingPicFile; if (!newNameInput || !picFileInput) return; let changesMade = false; const profileUpdates = {}; const newName = newNameInput.value.trim(); if (newName && newName !== currentUser.profile.full_name) { profileUpdates.full_name = newName; changesMade = true; } const picFile = picFileInput.files[0]; if (picFile) { if (picFile.size > 1024 * 1024) {  window.showToast("Profile picture too large (max 1MB).", "error"); return; } const fileExt = picFile.name.split('.').pop(); const filePath = `${currentUser.authUser.id}/${Date.now()}.${fileExt}`;  const { error: uploadError } = await supabase.storage.from('avatars').upload(filePath, picFile, { upsert: true });  if (uploadError) { console.error("Avatar upload error:", uploadError); window.showToast("Failed to upload profile picture.", "error"); return;  } profileUpdates.profile_pic_url = filePath;  changesMade = true; } if (changesMade) { try { const { data: updatedProfile, error: updateError } = await supabase.from(DB_TABLES.PROFILES).update(profileUpdates).eq('id', currentUser.authUser.id).select().single(); if (updateError) throw updateError; currentUser.profile = { ...currentUser.profile, ...updatedProfile };  if (profileUpdates.full_name) { if (dashboardElements.welcome) dashboardElements.welcome.textContent = `Welcome, ${currentUser.profile.full_name}!`; if (dashboardElements.userName) dashboardElements.userName.textContent = currentUser.profile.full_name; } if (profileUpdates.profile_pic_url) { const { data: publicUrlData } = supabase.storage.from('avatars').getPublicUrl(currentUser.profile.profile_pic_url); dashboardElements.dashProfilePic.src = publicUrlData.publicUrl; dashboardElements.dashProfilePic.classList.remove('hidden'); dashboardElements.dashProfilePicPlaceholder.classList.add('hidden'); } await addTransactionToDB(currentUser.authUser.id, currentUser.authUser.email, 'profile_update', `Profile details updated.`, 0, 'system_event'); window.showToast("Profile updated successfully!", "success"); } catch (error) { console.error("Error updating profile:", error); window.showToast(error.message || "Failed to update profile.", "error"); } } else { window.showToast("No changes to update.", "info"); } picFileInput.value = '';  });
+if (forms.changePassword) forms.changePassword.addEventListener('submit', async (e) => { e.preventDefault(); if (!currentUser || !currentUser.authUser) return; const newPassInput = document.getElementById('new-password'); const confirmNewPassInput = document.getElementById('confirm-new-password'); clearFormMessage(dashboardElements.changePasswordMessage); if (newPassInput.value.length < 6) { displayFormMessage(dashboardElements.changePasswordMessage, "New password min 6 characters.", "error"); return; } if (newPassInput.value !== confirmNewPassInput.value) { displayFormMessage(dashboardElements.changePasswordMessage, "New passwords do not match.", "error"); return; } try { const { error } = await supabase.auth.updateUser({ password: newPassInput.value }); if (error) throw error; await addTransactionToDB(currentUser.authUser.id, currentUser.authUser.email, 'security_update', `Password changed by user.`, 0, 'system_event'); displayFormMessage(dashboardElements.changePasswordMessage, "Password changed successfully!", "success"); forms.changePassword.reset(); window.showToast("Password changed successfully!", "success"); } catch (error) { console.error("Error changing password:", error); displayFormMessage(dashboardElements.changePasswordMessage, error.message || "Failed to change password.", "error"); window.showToast(error.message || "Failed to change password.", "error"); } });
+window.handle2FAToggleChange = async function (isChecked) { if (!currentUser || !currentUser.authUser || !dashboardElements.profile2FAStatus) return; if (isChecked) {  try { const { data, error } = await supabase.auth.mfa.enroll({ factorType: 'totp' }); if (error) throw error; dashboardElements.qrCodeImg.src = data.totp.qr_code; dashboardElements.qrCodeContainer.classList.remove('hidden'); dashboardElements.profile2FAStatus.textContent = "Pending verification..."; } catch (error) { console.error("Error enrolling 2FA:", error); window.showToast(error.message || "Failed to start 2FA enrollment.", "error"); dashboardElements.profile2FAToggle.checked = false;  } } else {  if (!currentUser.profile.is_2fa_enabled) {  dashboardElements.profile2FAStatus.textContent = "Disabled"; dashboardElements.qrCodeContainer.classList.add('hidden'); return; } try { const { data: factors, error: listError } = await supabase.auth.mfa.listFactors(); if (listError) throw listError; const totpFactor = factors.factors.find(f => f.factor_type === 'totp' && f.status === 'verified'); if (totpFactor) { const { error: unenrollError } = await supabase.auth.mfa.unenroll({ factorId: totpFactor.id }); if (unenrollError) throw unenrollError; } await supabase.from(DB_TABLES.PROFILES).update({ is_2fa_enabled: false }).eq('id', currentUser.authUser.id); currentUser.profile.is_2fa_enabled = false; dashboardElements.profile2FAStatus.textContent = "Disabled"; dashboardElements.qrCodeContainer.classList.add('hidden'); window.showToast("Two-Factor Authentication disabled.", "info"); await addTransactionToDB(currentUser.authUser.id, currentUser.authUser.email, 'security_update', `2FA disabled by user.`, 0, 'system_event'); } catch (error) { console.error("Error disabling 2FA:", error); window.showToast(error.message || "Failed to disable 2FA.", "error"); dashboardElements.profile2FAToggle.checked = true;  } } };
+window.verify2FAEnrollment = async function () { const code = dashboardElements.verify2FACodeInput.value.trim(); if (!code || code.length !== 6) { window.showToast("Please enter a valid 6-digit code.", "warning"); return; } try { const { data: challengeData, error: challengeError } = await supabase.auth.mfa.challenge({ factorType: 'totp' }); if (challengeError) throw challengeError; const { error: verifyError } = await supabase.auth.mfa.verify({ factorType: 'totp', challengeId: challengeData.id, code: code }); if (verifyError) throw verifyError; await supabase.from(DB_TABLES.PROFILES).update({ is_2fa_enabled: true }).eq('id', currentUser.authUser.id); currentUser.profile.is_2fa_enabled = true; dashboardElements.profile2FAStatus.textContent = "Enabled"; dashboardElements.qrCodeContainer.classList.add('hidden'); dashboardElements.verify2FACodeInput.value = '';  window.showToast("Two-Factor Authentication enabled successfully!", "success"); await addTransactionToDB(currentUser.authUser.id, currentUser.authUser.email, 'security_update', `2FA enabled by user.`, 0, 'system_event'); } catch (error) { console.error("Error verifying 2FA code:", error); window.showToast(error.message || "Failed to verify 2FA code.", "error"); dashboardElements.profile2FAStatus.textContent = "Verification Failed. Try again."; } };
+async function loadUserSupportTicketsBrief() { if (!currentUser || !currentUser.authUser || !dashboardElements.userTicketListBrief) return; try { const { data: tickets, error } = await supabase.from(DB_TABLES.SUPPORT_TICKETS).select('id, subject, status, created_at, support_ticket_messages(created_at)').eq('user_id', currentUser.authUser.id).order('created_at', { foreignTable: `${DB_TABLES.SUPPORT_TICKET_MESSAGES}`, ascending: false }) .order('created_at', { ascending: false }).limit(3); if (error) throw error; dashboardElements.userTicketListBrief.innerHTML = ''; if (!tickets || tickets.length === 0) { dashboardElements.userTicketListBrief.innerHTML = '<p class="text-center">No support tickets yet.</p>'; return; } tickets.forEach(ticket => { const item = document.createElement('div'); item.classList.add('ticket-item'); const lastUpdate = ticket.support_ticket_messages && ticket.support_ticket_messages.length > 0 ? ticket.support_ticket_messages[0].created_at : ticket.created_at; item.innerHTML = `<p><strong>${ticket.subject.substring(0, 30)}${ticket.subject.length > 30 ? '...' : ''}</strong></p><p>Status: <span class="ticket-status-${ticket.status.toLowerCase()}">${ticket.status.replace(/_/g, ' ')}</span> | Last Update: ${formatDate(lastUpdate, { month: 'short', day: 'numeric' })}</p>`; item.onclick = async () => { window.openModal('userSupportTicketModal'); await displayUserTicketChatView(ticket.id); };  dashboardElements.userTicketListBrief.appendChild(item); }); } catch (error) { console.error("Error loading user support tickets brief:", error); dashboardElements.userTicketListBrief.innerHTML = '<p class="text-center">Error loading tickets.</p>'; } }
+async function displayUserSupportTicketsView() {  if(!dashboardElements.userNewTicketFormView || !dashboardElements.userTicketChatView || !dashboardElements.userSupportTicketView || !dashboardElements.userSupportTicketTitle || !dashboardElements.userExistingTicketsList) return; dashboardElements.userNewTicketFormView.classList.add('hidden'); dashboardElements.userTicketChatView.classList.add('hidden'); dashboardElements.userSupportTicketView.classList.remove('hidden'); dashboardElements.userSupportTicketTitle.innerHTML = '<i class="fas fa-headset"></i> My Support Tickets'; try { const { data: tickets, error } = await supabase.from(DB_TABLES.SUPPORT_TICKETS).select('id, subject, status, created_at').eq('user_id', currentUser.authUser.id).order('created_at', { ascending: false }); if (error) throw error; dashboardElements.userExistingTicketsList.innerHTML = ''; if (!tickets || tickets.length === 0) { dashboardElements.userExistingTicketsList.innerHTML = '<p class="text-center">You have no support tickets.</p>'; } else { tickets.forEach(ticket => { const item = document.createElement('div'); item.classList.add('ticket-item'); item.innerHTML = `<p><strong>${ticket.subject}</strong> (ID: ...${String(ticket.id).slice(-4)})</p><p>Status: <span class="ticket-status-${ticket.status.toLowerCase()}">${ticket.status.replace(/_/g, ' ')}</span> | Created: ${formatDate(ticket.created_at, { month: 'short', day: 'numeric' })}</p>`; item.onclick = async () => await displayUserTicketChatView(ticket.id); dashboardElements.userExistingTicketsList.appendChild(item); }); } } catch (error) { console.error("Error displaying user support tickets:", error); dashboardElements.userExistingTicketsList.innerHTML = '<p class="text-center">Error loading tickets.</p>'; } }
+if(dashboardElements.userCreateNewTicketBtn) dashboardElements.userCreateNewTicketBtn.onclick = () => { if(!dashboardElements.userSupportTicketView || !dashboardElements.userTicketChatView || !dashboardElements.userNewTicketFormView || !dashboardElements.userSupportTicketTitle) return; dashboardElements.userSupportTicketView.classList.add('hidden'); dashboardElements.userTicketChatView.classList.add('hidden'); dashboardElements.userNewTicketFormView.classList.remove('hidden'); dashboardElements.userSupportTicketTitle.innerHTML = '<i class="fas fa-plus-circle"></i> Create New Ticket'; if (forms.userNewTicketForm) forms.userNewTicketForm.reset(); };
+if(dashboardElements.userCancelNewTicketBtn) dashboardElements.userCancelNewTicketBtn.onclick = displayUserSupportTicketsView;
+if(forms.userNewTicketForm) forms.userNewTicketForm.addEventListener('submit', async (e) => { e.preventDefault(); if (!dashboardElements.userTicketSubjectInput || !dashboardElements.userTicketMessageInput) return; const subject = dashboardElements.userTicketSubjectInput.value.trim(); const message = dashboardElements.userTicketMessageInput.value.trim(); if (!subject || !message) { window.showToast("Subject and message are required.", "error"); return; } try { const { data: newTicket, error: ticketError } = await supabase.from(DB_TABLES.SUPPORT_TICKETS).insert({ user_id: currentUser.authUser.id, subject: subject, status: 'open', last_user_reply_at: new Date().toISOString() }).select().single(); if (ticketError) throw ticketError; await supabase.from(DB_TABLES.SUPPORT_TICKET_MESSAGES).insert({ ticket_id: newTicket.id, sender_id: currentUser.authUser.id, sender_role: 'user', message_text: message }); window.showToast("Support ticket submitted!", "success"); await addUserSystemNotificationToDB( 'admin_group', `New support ticket from ${currentUser.authUser.email}: "${subject}"`, 'admin', true, newTicket.id ); await displayUserTicketChatView(newTicket.id); await loadUserSupportTicketsBrief(); } catch (error) { console.error("Error creating new ticket:", error); window.showToast("Failed to submit ticket.", "error");} });
+async function displayUserTicketChatView(ticketDbId) { if(!dashboardElements.userSupportTicketView || !dashboardElements.userNewTicketFormView || !dashboardElements.userTicketChatView || !dashboardElements.userSupportTicketTitle || !dashboardElements.userChatTicketSubject || !dashboardElements.userReplyTicketIdInput || !dashboardElements.userTicketChatMessages) return; try { const { data: ticket, error: ticketError } = await supabase.from(DB_TABLES.SUPPORT_TICKETS).select('*').eq('id', ticketDbId).single(); if (ticketError || !ticket) { window.showToast("Ticket not found.", "error"); displayUserSupportTicketsView(); return; } const { data: messages, error: messagesError } = await supabase.from(DB_TABLES.SUPPORT_TICKET_MESSAGES).select('*, profiles(full_name, role)').eq('ticket_id', ticketDbId).order('created_at', { ascending: true }); if (messagesError) throw messagesError; dashboardElements.userSupportTicketView.classList.add('hidden'); dashboardElements.userNewTicketFormView.classList.add('hidden'); dashboardElements.userTicketChatView.classList.remove('hidden'); dashboardElements.userSupportTicketTitle.innerHTML = `<i class="fas fa-comments"></i> Ticket: ${ticket.subject}`; dashboardElements.userChatTicketSubject.textContent = ticket.subject; dashboardElements.userReplyTicketIdInput.value = ticketDbId; const chatMessagesEl = dashboardElements.userTicketChatMessages; chatMessagesEl.innerHTML = ''; (messages || []).forEach(msg => { const msgDiv = document.createElement('div'); msgDiv.classList.add('support-chat-message', msg.sender_role === 'user' ? 'user' : 'admin'); msgDiv.innerHTML = `<span class="sender">${msg.sender_role === 'user' ? 'You' : (msg.profiles?.full_name || 'Support')}</span><p>${msg.message_text.replace(/\n/g, '<br>')}</p><span class="timestamp">${formatDate(msg.created_at, { hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short' })}</span>`; chatMessagesEl.appendChild(msgDiv); }); chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight; if (forms.userReplyTicketForm) forms.userReplyTicketForm.reset(); } catch (error) { console.error("Error displaying ticket chat:", error); window.showToast("Could not load ticket details.", "error"); displayUserSupportTicketsView(); } }
+if(dashboardElements.userBackToTicketsBtn) dashboardElements.userBackToTicketsBtn.onclick = displayUserSupportTicketsView;
+if(forms.userReplyTicketForm) forms.userReplyTicketForm.addEventListener('submit', async (e) => { e.preventDefault(); if (!dashboardElements.userReplyTicketIdInput || !dashboardElements.userTicketReplyMessageInput) return; const ticketId = dashboardElements.userReplyTicketIdInput.value; const replyMessage = dashboardElements.userTicketReplyMessageInput.value.trim(); if (!replyMessage) { window.showToast("Reply message cannot be empty.", "error"); return; } try { await supabase.from(DB_TABLES.SUPPORT_TICKET_MESSAGES).insert({ ticket_id: ticketId, sender_id: currentUser.authUser.id, sender_role: 'user', message_text: replyMessage }); const { data: ticketData, error: ticketUpdateError } = await supabase.from(DB_TABLES.SUPPORT_TICKETS).update({ status: 'user_reply', last_user_reply_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq('id', ticketId).select('subject').single(); if (ticketUpdateError) throw ticketUpdateError; window.showToast("Reply sent!", "success"); await addUserSystemNotificationToDB( 'admin_group', `User reply on ticket "${ticketData.subject}" from ${currentUser.authUser.email}.`, 'admin', true, ticketId ); await displayUserTicketChatView(ticketId); await loadUserSupportTicketsBrief(); } catch (error) { console.error("Error sending ticket reply:", error); window.showToast("Failed to send reply.", "error"); } });
+function populateProfitCalculatorPlans() { if (!dashboardElements.profitCalcPlanSelect) return; const displayCurrency = getUserDisplayCurrency(); dashboardElements.profitCalcPlanSelect.innerHTML = '<option value="">-- Select a Plan --</option>'; (NFX_CONFIG.investmentPlans || []).filter(p => p.isEnabled).forEach(plan => { const option = document.createElement('option'); option.value = String(plan.id); option.textContent = `${plan.name} (${formatCurrencyValue(plan.minAmount, displayCurrency)} - ${formatCurrencyValue(plan.maxAmount, displayCurrency)})`; dashboardElements.profitCalcPlanSelect.appendChild(option); }); }
+function calculateProfitProjection() {  if (!dashboardElements.profitCalcPlanSelect || !dashboardElements.profitCalcAmountInput || !dashboardElements.profitCalcResultsDisplay) return; const displayCurrency = getUserDisplayCurrency(); const amountInputEl = dashboardElements.profitCalcAmountInput; amountInputEl.classList.remove('input-error'); const planIdStr = dashboardElements.profitCalcPlanSelect.value; const amount = parseFloat(amountInputEl.value); if (!planIdStr) { window.showToast("Please select a plan.", "warning"); dashboardElements.profitCalcResultsDisplay.classList.add('hidden'); return; } const planId = parseInt(planIdStr); const plan = NFX_CONFIG.investmentPlans.find(p => p.id === planId && p.isEnabled); if (!plan) { window.showToast("Invalid or disabled plan.", "error"); dashboardElements.profitCalcResultsDisplay.classList.add('hidden'); return; } if (isNaN(amount) || amount <= 0) { window.showToast("Enter a valid amount.", "error"); amountInputEl.classList.add('input-error'); dashboardElements.profitCalcResultsDisplay.classList.add('hidden'); return; } if (amount < plan.minAmount || amount > plan.maxAmount) { window.showToast(`Amount for ${plan.name} must be ${formatCurrencyValue(plan.minAmount, displayCurrency)} - ${formatCurrencyValue(plan.maxAmount, displayCurrency)}.`, "error"); amountInputEl.classList.add('input-error'); dashboardElements.profitCalcResultsDisplay.classList.add('hidden'); return; } let projectedProfit = 0; let totalReturn = 0; let durationDisplay = ''; let profitText = ''; const now = new Date(); let maturityDate; if (plan.isShortTerm) { projectedProfit = (amount * plan.totalProfitPercentShortTerm) / 100; if(plan.dailyProfitFixedShortTerm > 0) projectedProfit += (plan.dailyProfitFixedShortTerm * (plan.durationDaysShortTerm || 0)); else if(plan.dailyProfitPercentShortTerm > 0) projectedProfit += ((amount * plan.dailyProfitPercentShortTerm / 100) * (plan.durationDaysShortTerm || 0) ); totalReturn = amount + projectedProfit; let totalMinutes = (plan.durationDaysShortTerm * 24 * 60) + plan.durationMinutesShortTerm; durationDisplay = (plan.durationDaysShortTerm > 0 ? `${plan.durationDaysShortTerm} Days ` : '') + (plan.durationMinutesShortTerm > 0 ? `${plan.durationMinutesShortTerm} Mins` : ''); if(!durationDisplay) durationDisplay = "Short period"; maturityDate = addTime(now, totalMinutes, 'minutes'); profitText = `${formatCurrencyValue(projectedProfit, displayCurrency)} (Total)`; } else { if (plan.dailyProfitFixedLongTerm > 0) { projectedProfit = plan.dailyProfitFixedLongTerm * plan.durationDaysLongTerm; profitText = `${formatCurrencyValue(plan.dailyProfitFixedLongTerm, getGlobalDisplayCurrency())} (Daily Fixed) / ${formatCurrencyValue(projectedProfit, displayCurrency)} (Total)`; } else if (plan.dailyProfitPercentLongTerm > 0) { const dailyProfit = (amount * plan.dailyProfitPercentLongTerm) / 100; projectedProfit = dailyProfit * plan.durationDaysLongTerm; profitText = `${formatCurrencyValue(dailyProfit, displayCurrency)} (Daily %) / ${formatCurrencyValue(projectedProfit, displayCurrency)} (Total)`; } else if (plan.totalProfitPercentLongTerm > 0) { projectedProfit = (amount * plan.totalProfitPercentLongTerm) / 100; profitText = `${formatCurrencyValue(projectedProfit, displayCurrency)} (Total)`; } totalReturn = amount + projectedProfit; durationDisplay = `${plan.durationDaysLongTerm} Days`; maturityDate = addTime(now, plan.durationDaysLongTerm, 'days'); } if (dashboardElements.profitCalcResultProfit) dashboardElements.profitCalcResultProfit.textContent = profitText; if (dashboardElements.profitCalcResultReturn) dashboardElements.profitCalcResultReturn.textContent = formatCurrencyValue(totalReturn, displayCurrency); if (dashboardElements.profitCalcResultDuration) dashboardElements.profitCalcResultDuration.textContent = durationDisplay.trim(); if (dashboardElements.profitCalcResultMaturity) dashboardElements.profitCalcResultMaturity.textContent = formatDate(maturityDate); dashboardElements.profitCalcResultsDisplay.classList.remove('hidden'); }
+function openInvestmentModal(planId) {
+    const plan = NFX_CONFIG.investmentPlans.find(p => p.id === planId);
+    if (!plan) return;
+    const displayCurrency = getUserDisplayCurrency();
+    const modalInfo = document.getElementById('investment-modal-info');
+    const modalAmountInput = document.getElementById('investment-modal-amount');
+    const modalPlanIdInput = document.getElementById('investment-modal-plan-id');
+    
+    modalPlanIdInput.value = plan.id;
+    modalInfo.innerHTML = `
+        <strong>Plan:</strong> ${plan.name}<br>
+        <strong>Limits:</strong> ${formatCurrencyValue(plan.minAmount, displayCurrency)} - ${formatCurrencyValue(plan.maxAmount, displayCurrency)}<br>
+        <strong>Your Wallet:</strong> ${formatCurrencyValue(currentUser.profile.wallet_balance || 0, displayCurrency)}
+    `;
+    modalAmountInput.min = plan.minAmount;
+    modalAmountInput.max = plan.maxAmount;
+    modalAmountInput.placeholder = `e.g. ${plan.minAmount}`;
+    modalAmountInput.value = '';
+
+    clearFormMessage(dashboardElements.messageElements.investmentModal);
+    openModal('investmentAmountModal');
+}
+if (forms.investmentAmount) {
+    forms.investmentAmount.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const planId = parseInt(document.getElementById('investment-modal-plan-id').value);
+        const amount = parseFloat(document.getElementById('investment-modal-amount').value);
+        const plan = NFX_CONFIG.investmentPlans.find(p => p.id === planId);
+        
+        clearFormMessage(dashboardElements.messageElements.investmentModal);
+
+        if (isNaN(amount) || amount < plan.minAmount || amount > plan.maxAmount) {
+            return displayFormMessage(dashboardElements.messageElements.investmentModal, `Amount must be between ${formatCurrencyValue(plan.minAmount)} and ${formatCurrencyValue(plan.maxAmount)}.`, 'error');
+        }
+        if (amount > (currentUser.profile.wallet_balance || 0)) {
+            return displayFormMessage(dashboardElements.messageElements.investmentModal, `Insufficient balance. You have ${formatCurrencyValue(currentUser.profile.wallet_balance || 0)}.`, 'error');
+        }
+
+        closeModal('investmentAmountModal');
+        await handleInvestmentSelection(planId, amount);
+    });
+}
+
+
+// ##################################################################
+// ################      ADMIN PANEL LOGIC START     ################
+// ##################################################################
+async function loadAdminPanel() { if (!currentUser || !currentUser.profile || !['super_admin', 'assistant_admin'].includes(currentUser.profile.role)) { window.showToast("Access denied.", "error"); window.navigateToSection('home', 'nav-home'); return; } window.navigateToSection('adminPanel', 'nav-admin'); const userRoleText = currentUser.profile.role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()); if (dashboardElements.adminPanelTitle) dashboardElements.adminPanelTitle.innerHTML = `<i class="fas fa-user-shield"></i> Admin Panel (${currentUser.authUser.email} - ${userRoleText})`; if (dashboardElements.adminAssistantBanner) dashboardElements.adminAssistantBanner.classList.toggle('hidden', currentUser.profile.role !== 'assistant_admin'); const firstAdminMainTab = document.querySelector('#admin-panel-section > .admin-tabs .admin-tab-button'); if (firstAdminMainTab) await window.showAdminMainTab(firstAdminMainTab.dataset.tabTarget, firstAdminMainTab); if (currentUser.profile.role === 'assistant_admin') { const restrictedSelectors = [ '#admin-panel-section .admin-tab-button[data-tab-target="settings"]', '#admin-panel-section .admin-tab-button[data-tab-target="systemLog"]', '#admin-panel-section .button-danger', '#admin-planManagement-tab .button-success', '#admin-contentManagement-tab .button-success', '#admin-settings-tab .button:not(.button-small)' ]; document.querySelectorAll(restrictedSelectors.join(', ')).forEach(el => { el.classList.add('disabled'); el.disabled = true; el.style.pointerEvents = 'none'; el.title = "Action restricted for Assistant Admin"; }); if(dashboardElements.adminTicketChangeStatusSelect) dashboardElements.adminTicketChangeStatusSelect.disabled = true; } }
+window.showAdminMainTab = async function (tabName, clickedButton) { document.querySelectorAll('#admin-panel-section > .admin-tab-content').forEach(content => content.classList.remove('active')); document.querySelectorAll('#admin-panel-section > .admin-tabs .admin-tab-button').forEach(button => button.classList.remove('active')); const targetMainTab = document.getElementById(`admin-${tabName}-tab`); if (targetMainTab) targetMainTab.classList.add('active'); if (clickedButton) clickedButton.classList.add('active'); switch(tabName) { case 'overview': await loadAdminOverviewTabContent(); break; case 'userManagement': await loadAdminUserManagementTabContent(); break; case 'transactions': await loadAdminAllTransactionsTabContent(); break; case 'planManagement': await loadAdminPlanManagementTabContent(); break; case 'contentManagement':  await loadAdminContentManagementTabContent(); break; case 'supportTickets':  await loadAdminSupportTicketsTabContent(); break; case 'analytics': await loadAdminAnalyticsTabContent(); break;  case 'settings': await loadAdminGlobalSettingsTabContent(); break; case 'systemLog': await loadAdminSystemLogTabContent(); break; default: if (targetMainTab) targetMainTab.innerHTML = `<div class="dashboard-card"><p class="text-center" style="padding:20px;">Content for '${tabName}' tab is under development.</p></div>`; } };
+async function loadAdminOverviewTabContent() { if (!dashboardElements.adminPendingDeposits || !dashboardElements.adminPendingWithdrawals || !dashboardElements.adminPendingDepositsCount || !dashboardElements.adminPendingWithdrawalsCount) { return; } dashboardElements.adminPendingDeposits.innerHTML = '<div class="loader"></div>'; dashboardElements.adminPendingWithdrawals.innerHTML = '<div class="loader"></div>'; try { const { data: pendingTxs, error: txError } = await supabase.from(DB_TABLES.TRANSACTIONS).select('id, created_at, type, amount, currency, method, status, user_id, details, proof_filename, profiles(email, full_name)').in('type', ['deposit', 'withdrawal']).eq('status', 'pending').order('created_at', { ascending: true }); if (txError) { throw txError; } const pendingDeposits = (pendingTxs || []).filter(tx => tx.type === 'deposit'); const pendingWithdrawals = (pendingTxs || []).filter(tx => tx.type === 'withdrawal'); renderAdminPendingTxList(dashboardElements.adminPendingDeposits, pendingDeposits, 'deposit'); dashboardElements.adminPendingDepositsCount.textContent = String(pendingDeposits.length); renderAdminPendingTxList(dashboardElements.adminPendingWithdrawals, pendingWithdrawals, 'withdrawal'); dashboardElements.adminPendingWithdrawalsCount.textContent = String(pendingWithdrawals.length); await loadAdminGlobalStats(); } catch (error) { console.error("Error in loadAdminOverviewTabContent:", error); window.showToast("Could not load admin overview data.", "error"); if (dashboardElements.adminPendingDeposits) dashboardElements.adminPendingDeposits.innerHTML = `<p class="text-center form-message error">Error loading pending deposits.</p>`; if (dashboardElements.adminPendingWithdrawals) dashboardElements.adminPendingWithdrawals.innerHTML = `<p class="text-center form-message error">Error loading pending withdrawals.</p>`; } }
+async function loadAdminGlobalStats() { if (!dashboardElements.adminGlobalStatsDisplay) return; dashboardElements.adminGlobalStatsDisplay.innerHTML = '<div class="loader"></div>'; try { const [ { count: totalUsers, error: usersError }, { data: depositsData, error: depositsError }, { data: withdrawalsData, error: withdrawalsError }, { data: investmentsData, error: investmentsError }, { data: profilesData, error: profitsError } ] = await Promise.all([ supabase.from(DB_TABLES.PROFILES).select('id', { count: 'exact', head: true }), supabase.from(DB_TABLES.TRANSACTIONS).select('amount').eq('type', 'deposit').eq('status', 'approved'), supabase.from(DB_TABLES.TRANSACTIONS).select('amount').eq('type', 'withdrawal').eq('status', 'approved'), supabase.from(DB_TABLES.USER_INVESTMENTS).select('amount').eq('status', 'active'), supabase.from(DB_TABLES.PROFILES).select('total_realized_profit') ]); if (usersError || depositsError || withdrawalsError || investmentsError || profitsError) {  throw new Error(`One or more stats queries failed. Users: ${usersError?.message}, Deposits: ${depositsError?.message}, Withdrawals: ${withdrawalsError?.message}, Investments: ${investmentsError?.message}, Profits: ${profitsError?.message}`); } const sumReducer = (acc, item) => acc + (item.amount || 0); const totalDepositsValue = (depositsData || []).reduce(sumReducer, 0); const totalWithdrawalsValue = (withdrawalsData || []).reduce(sumReducer, 0); const totalInvestedValue = (investmentsData || []).reduce(sumReducer, 0); const totalProfitsValue = (profilesData || []).reduce((acc, item) => acc + (item.total_realized_profit || 0), 0); const globalCurrency = getGlobalDisplayCurrency(); const stats = [ { title: 'Total Users', value: (totalUsers || 0).toLocaleString() }, { title: 'Total Deposits', value: formatCurrencyValue(totalDepositsValue, globalCurrency) }, { title: 'Total Withdrawals', value: formatCurrencyValue(totalWithdrawalsValue, globalCurrency) }, { title: 'Actively Invested', value: formatCurrencyValue(totalInvestedValue, globalCurrency) }, { title: 'Total Profit Payouts', value: formatCurrencyValue(totalProfitsValue, globalCurrency) } ]; dashboardElements.adminGlobalStatsDisplay.innerHTML = stats.map(stat => ` <div class="stat-card"><h4>${stat.title}</h4><p>${stat.value}</p></div> `).join(''); } catch (error) { console.error("Error loading global stats:", error); dashboardElements.adminGlobalStatsDisplay.innerHTML = `<p class="text-center form-message error">Error loading stats.</p>`; } }
+function renderAdminPendingTxList(container, transactions, type) { if (!container) return; container.innerHTML = (!transactions || transactions.length === 0) ? `<p style="text-align:center; padding: 10px 0;">No pending ${type}s.</p>` : transactions.map(tx => { const user = tx.profiles; const txCurrency = NFX_CONFIG.currencies.find(c => c.code === tx.currency) || getGlobalDisplayCurrency(); return ` <div class="pending-tx-card" id="tx-card-${tx.id}"> <p><strong>User:</strong> ${user?.full_name || 'N/A'} (${user?.email || tx.user_id || 'N/A'})</p> <p><strong>Amount:</strong> ${formatCurrencyValue(tx.amount, txCurrency)}</p> <p><strong>Method:</strong> ${tx.method}</p> ${type === 'withdrawal' ? `<p><strong>Details:</strong> ${tx.details || 'N/A'}</p>` : (type === 'deposit' ? `<p><strong>Proof:</strong> ${tx.proof_filename || 'N/A'}</p>`: '')} <p><strong>Date:</strong> ${formatDate(tx.created_at)}</p> <div class="actions" style="margin-top: 10px;"> <button class="button button-small button-success" onclick="window.adminApproveTransaction('${tx.id}')">Approve</button> <button class="button button-small button-danger" onclick="window.adminRejectTransaction('${tx.id}')">Reject</button> </div> </div>`; }).join(''); }
+window.adminApproveTransaction = async function(txId) { if (! (await window.showCustomConfirm(`Are you sure you want to APPROVE transaction ID ${txId}? This is irreversible.`, "Approve Transaction"))) return; try { const { data: tx, error: txError } = await supabase.from(DB_TABLES.TRANSACTIONS).select(`*, profiles(*)`).eq('id', txId).single(); if (txError || !tx) throw txError || new Error("Transaction not found."); if (tx.status !== 'pending') return window.showToast("Transaction is not pending.", "warning"); const balanceUpdate = tx.type === 'deposit' ? (tx.profiles.wallet_balance || 0) + tx.amount : (tx.profiles.wallet_balance || 0) - tx.amount; await supabase.from(DB_TABLES.TRANSACTIONS).update({ status: 'approved' }).eq('id', txId); await supabase.from(DB_TABLES.PROFILES).update({ wallet_balance: balanceUpdate }).eq('id', tx.user_id); const txCurrency = NFX_CONFIG.currencies.find(c => c.code === tx.currency) || getGlobalDisplayCurrency(); await addUserSystemNotificationToDB(tx.user_id, `Your ${tx.type} of ${formatCurrencyValue(tx.amount, txCurrency)} has been approved.`, 'success'); await adminAddSystemLog(`Approved ${tx.type}`, `TX ID: ${tx.id}, User: ${tx.profiles.email}`, tx.user_id); window.showToast(`${tx.type} approved!`, "success"); await loadAdminOverviewTabContent(); } catch (error) { console.error("Error approving transaction:", error); window.showToast(error.message || "Failed to approve transaction.", "error"); } };
+window.adminRejectTransaction = async function(txId) { if (! (await window.showCustomConfirm(`Are you sure you want to REJECT transaction ID ${txId}?`, "Reject Transaction"))) return; try { const { data: tx, error: txError } = await supabase.from(DB_TABLES.TRANSACTIONS).select(`*, profiles(email)`).eq('id', txId).single(); if (txError || !tx) throw txError || new Error("Transaction not found."); if (tx.status !== 'pending') return window.showToast("Transaction is not pending.", "warning"); await supabase.from(DB_TABLES.TRANSACTIONS).update({ status: 'rejected' }).eq('id', txId); const txCurrency = NFX_CONFIG.currencies.find(c => c.code === tx.currency) || getGlobalDisplayCurrency(); await addUserSystemNotificationToDB(tx.user_id, `Your ${tx.type} of ${formatCurrencyValue(tx.amount, txCurrency)} was rejected. Contact support for details.`, 'error'); await adminAddSystemLog(`Rejected ${tx.type}`, `TX ID: ${tx.id}, User: ${tx.profiles.email}`, tx.user_id); window.showToast(`${tx.type} rejected.`, "info"); await loadAdminOverviewTabContent(); } catch (error) { console.error("Error rejecting transaction:", error); window.showToast(error.message || "Failed to reject transaction.", "error"); } };
+async function loadAdminUserManagementTabContent() { if (!dashboardElements.adminUserListTableContainer) return; dashboardElements.adminUserListTableContainer.innerHTML = '<div class="loader"></div>'; dashboardElements.adminNoUsersMessage?.classList.add('hidden'); try { const { data, error } = await supabase.from(DB_TABLES.PROFILES).select('*').order('updated_at', { ascending: false }); if (error) throw error; currentAdminUserListCache = data || []; renderAdminUserTable(currentAdminUserListCache); } catch (error) { console.error("Error loading users for admin panel:", error.message); dashboardElements.adminUserListTableContainer.innerHTML = `<p class="form-message error">Failed to load users. Details: ${error.message}</p>`; } }
+function renderAdminUserTable(usersToRender) { if (!dashboardElements.adminUserListTableContainer || !dashboardElements.adminNoUsersMessage) return; dashboardElements.adminNoUsersMessage.classList.toggle('hidden', usersToRender.length > 0); if (usersToRender.length === 0) { dashboardElements.adminUserListTableContainer.innerHTML = ''; dashboardElements.adminNoUsersMessage.textContent = "No users found matching criteria."; return; } const globalCurrency = getGlobalDisplayCurrency(); const tableHtml = ` <table id="admin-user-list-table"> <thead> <tr><th></th><th>Name</th><th>Email</th><th>Wallet Bal.</th><th>Role</th><th>Status</th><th>Last Updated</th><th>Actions</th></tr> </thead> <tbody> ${usersToRender.map(user => { const authUserForCreatedAt = currentUser?.authUser?.id === user.id ? currentUser.authUser : null; const joinDate = user.created_at || authUserForCreatedAt?.created_at || user.updated_at; const avatarUrl = user.profile_pic_url ? supabase.storage.from('avatars').getPublicUrl(user.profile_pic_url).data.publicUrl : `https://i.pravatar.cc/150?u=${user.id}`; const userRoleFormatted = user.role ? user.role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'N/A'; const userWalletCurrency = user.locked_currency || globalCurrency; return ` <tr> <td><img src="${avatarUrl}" class="admin-user-avatar" alt="Avatar" onerror="this.onerror=null;this.src='https://i.pravatar.cc/150?u=${user.id}';"></td> <td>${user.full_name || 'N/A'}</td> <td>${user.email}</td> <td>${formatCurrencyValue(user.wallet_balance || 0, userWalletCurrency)}</td> <td>${userRoleFormatted}</td> <td class="status-${user.is_suspended ? 'suspended' : 'approved'}">${user.is_suspended ? 'Suspended' : 'Active'}</td> <td>${formatDate(joinDate, { month: 'short', day: 'numeric', year: 'numeric' })}</td> <td class="actions"> <button class="button button-small" onclick="window.openAdminViewUserModal('${user.id}')" title="View User"><i class="fas fa-eye"></i></button> ${currentUser.profile.role === 'super_admin' ? ` <button class="button button-small button-secondary" onclick="window.openAdminEditUserModal('${user.id}')" title="Edit User"><i class="fas fa-edit"></i></button> ` : ''} </td> </tr>`; }).join('')} </tbody> </table> `; dashboardElements.adminUserListTableContainer.innerHTML = tableHtml; }
+async function loadAdminAllTransactionsTabContent(filters = {}) { dashboardElements.adminAllTransactionsTableBody.innerHTML = '<tr><td colspan="8" class="text-center"><div class="loader"></div></td></tr>'; try { let query = supabase.from(DB_TABLES.TRANSACTIONS).select(`*, profiles(email)`).order('created_at', { ascending: false }); if (filters.userEmail) query = query.ilike('profiles.email', `%${filters.userEmail}%`); if (filters.type) query = query.eq('type', filters.type); const { data, error } = await query; if (error) throw error; renderAdminAllTransactionsTable(data || []); } catch (error) { console.error("Error loading all transactions:", error); dashboardElements.adminAllTransactionsTableBody.innerHTML = `<tr><td colspan="8" class="text-center form-message error">Failed to load transactions.</td></tr>`; } }
+function renderAdminAllTransactionsTable(txs) { dashboardElements.adminNoTransactionsMessage.classList.toggle('hidden', txs.length > 0); dashboardElements.adminAllTransactionsTableBody.innerHTML = txs.map(tx => { const globalCurrency = getGlobalDisplayCurrency(); const txCurrency = NFX_CONFIG.currencies.find(c => c.code === tx.currency) || globalCurrency; const typeFormatted = tx.type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()); return ` <tr> <td>${formatDate(tx.created_at)}</td> <td>${tx.profiles?.email || tx.user_id || 'N/A'}</td> <td>${tx.description}</td> <td class="amount-${tx.tx_type_indicator === 'credit' ? 'credit' : 'debit'}">${formatCurrencyValue(tx.amount, txCurrency)}</td> <td>${tx.currency}</td> <td class="status-${tx.status}">${tx.status}</td> <td>${typeFormatted}</td> <td>...${String(tx.id).slice(-6)}</td> </tr>`; }).join(''); }
+async function loadAdminPlanManagementTabContent() { if (!dashboardElements.adminInvestmentPlansList) return; dashboardElements.adminInvestmentPlansList.innerHTML = '<div class="loader"></div>'; await loadEffectiveConfig();  if (NFX_CONFIG.investmentPlans && NFX_CONFIG.investmentPlans.length > 0) { renderAdminInvestmentPlanList(NFX_CONFIG.investmentPlans); } else { dashboardElements.adminInvestmentPlansList.innerHTML = `<p class="text-center">No investment plans configured yet.</p>`; } }
+function renderAdminInvestmentPlanList(plans) { if (!dashboardElements.adminInvestmentPlansList) return; const globalCurrency = getGlobalDisplayCurrency(); dashboardElements.adminInvestmentPlansList.innerHTML = plans.map(plan => { let profitInfo = ''; let durationInfo = ''; if (plan.isShortTerm) { profitInfo = `${plan.totalProfitPercentShortTerm}% total`; if (plan.dailyProfitFixedShortTerm > 0) profitInfo += ` / ${formatCurrencyValue(plan.dailyProfitFixedShortTerm, globalCurrency)} daily fixed`; else if (plan.dailyProfitPercentShortTerm > 0) profitInfo += ` / ${plan.dailyProfitPercentShortTerm}% daily`; durationInfo = (plan.durationDaysShortTerm > 0 ? `${plan.durationDaysShortTerm}d ` : '') + (plan.durationMinutesShortTerm > 0 ? `${plan.durationMinutesShortTerm}m` : ''); if (!durationInfo) durationInfo = "Short Period"; } else { if (plan.dailyProfitFixedLongTerm > 0) profitInfo = `${formatCurrencyValue(plan.dailyProfitFixedLongTerm, globalCurrency)} daily fixed`; else if (plan.dailyProfitPercentLongTerm > 0) profitInfo = `${plan.dailyProfitPercentLongTerm}% daily`; else if (plan.totalProfitPercentLongTerm > 0) profitInfo = `${plan.totalProfitPercentLongTerm}% total`; durationInfo = `${plan.durationDaysLongTerm}d`; } return ` <div class="admin-managed-item"> <h4>${plan.name} ${plan.isEnabled ? '' : '<span style="color:var(--accent-color);">(Disabled)</span>'}</h4> <p><strong>ID:</strong> ${plan.id}</p> <p><strong>Range:</strong> ${formatCurrencyValue(plan.minAmount, globalCurrency)} - ${formatCurrencyValue(plan.maxAmount, globalCurrency)}</p> <p><strong>Type:</strong> ${plan.isShortTerm ? 'Short-Term' : 'Long-Term'}</p> <p><strong>Profit:</strong> ${profitInfo.trim()}</p> <p><strong>Duration:</strong> ${durationInfo.trim()}</p> <p><strong>Description:</strong> ${plan.description}</p> <div class="actions"> <button class="button button-small" onclick="window.openAdminEditPlanModal(${plan.id})"><i class="fas fa-edit"></i> Edit</button> <button class="button button-small ${plan.isEnabled ? 'button-warning' : 'button-success'}" onclick="window.adminTogglePlanStatus(${plan.id}, ${!plan.isEnabled})"> <i class="fas ${plan.isEnabled ? 'fa-eye-slash' : 'fa-eye'}"></i> ${plan.isEnabled ? 'Disable' : 'Enable'} </button> ${currentUser.profile.role === 'super_admin' ? ` <button class="button button-small button-danger" onclick="window.adminDeletePlan(${plan.id})"><i class="fas fa-trash-alt"></i> Delete</button> ` : ''} </div> </div>`; }).join(''); if (!plans || plans.length === 0) { dashboardElements.adminInvestmentPlansList.innerHTML = `<p class="text-center">No investment plans found.</p>`; } }
+window.openAdminEditPlanModal = async function(planId) { forms.adminEditPlan.reset(); const modal = dashboardElements.adminEditPlanModal; const titleEl = dashboardElements.adminEditPlanTitle; const idInput = dashboardElements.adminEditPlanIdInput; if (planId) { const plan = NFX_CONFIG.investmentPlans.find(p => p.id === planId); if (!plan) return window.showToast("Plan not found.", "error"); titleEl.innerHTML = `<i class="fas fa-edit"></i> Edit Investment Plan`; idInput.value = plan.id; document.getElementById('admin-plan-name').value = plan.name; document.getElementById('admin-plan-minAmount').value = plan.minAmount; document.getElementById('admin-plan-maxAmount').value = plan.maxAmount; document.getElementById('admin-plan-description').value = plan.description; const isShortTermToggle = document.getElementById('admin-plan-isShortTerm'); isShortTermToggle.checked = plan.isShortTerm; togglePlanFieldVisibility(plan.isShortTerm); if (plan.isShortTerm) { document.getElementById('admin-plan-durationDays-short').value = plan.durationDaysShortTerm || 0; document.getElementById('admin-plan-durationMinutes-short').value = plan.durationMinutesShortTerm || 0; document.getElementById('admin-plan-totalProfitPercent-short').value = plan.totalProfitPercentShortTerm || 0; document.getElementById('admin-plan-dailyProfitPercent-short').value = plan.dailyProfitPercentShortTerm || 0; document.getElementById('admin-plan-dailyProfitFixed-short').value = plan.dailyProfitFixedShortTerm || 0; } else { document.getElementById('admin-plan-durationDays-long').value = plan.durationDaysLongTerm || 0; document.getElementById('admin-plan-dailyProfitPercent-long').value = plan.dailyProfitPercentLongTerm || 0; document.getElementById('admin-plan-dailyProfitFixed-long').value = plan.dailyProfitFixedLongTerm || 0; document.getElementById('admin-plan-totalProfitPercent-long').value = plan.totalProfitPercentLongTerm || 0; } } else { titleEl.innerHTML = `<i class="fas fa-plus"></i> Add New Plan`; idInput.value = ''; togglePlanFieldVisibility(false);  } window.openModal('adminEditPlanModal'); };
+function togglePlanFieldVisibility(isShortTerm) { dashboardElements.planFieldsLongTermGroup.classList.toggle('hidden-fields', isShortTerm); dashboardElements.planFieldsShortTermGroup.classList.toggle('hidden-fields', !isShortTerm); }
+window.adminDeletePlan = async function(planId) { if (currentUser.profile.role !== 'super_admin') return window.showToast("Action restricted.", "error"); const confirmed = await showCustomConfirm(`Are you sure you want to delete plan ID ${planId}? This cannot be undone.`, "Delete Plan"); if (!confirmed) return; try { const { error } = await supabase.from(DB_TABLES.INVESTMENT_PLANS).delete().eq('id', planId); if (error) throw error; await adminAddSystemLog('Deleted Plan', `Plan ID: ${planId}`); window.showToast("Plan deleted successfully.", "success"); await loadAdminPlanManagementTabContent(); await loadEffectiveConfig();  } catch(e) { console.error("Error deleting plan:", e); window.showToast(e.message || "Failed to delete plan.", "error"); } };
+async function adminSavePlan() { const planId = dashboardElements.adminEditPlanIdInput.value; const isShortTerm = document.getElementById('admin-plan-isShortTerm').checked; const planData = { name: document.getElementById('admin-plan-name').value, minAmount: parseFloat(document.getElementById('admin-plan-minAmount').value), maxAmount: parseFloat(document.getElementById('admin-plan-maxAmount').value), description: document.getElementById('admin-plan-description').value, isShortTerm: isShortTerm, isEnabled: planId ? NFX_CONFIG.investmentPlans.find(p=>p.id === parseInt(planId))?.isEnabled : true,  }; if (isShortTerm) { planData.durationDaysShortTerm = parseInt(document.getElementById('admin-plan-durationDays-short').value) || 0; planData.durationMinutesShortTerm = parseInt(document.getElementById('admin-plan-durationMinutes-short').value) || 0; planData.totalProfitPercentShortTerm = parseFloat(document.getElementById('admin-plan-totalProfitPercent-short').value) || 0; planData.dailyProfitPercentShortTerm = parseFloat(document.getElementById('admin-plan-dailyProfitPercent-short').value) || 0; planData.dailyProfitFixedShortTerm = parseFloat(document.getElementById('admin-plan-dailyProfitFixed-short').value) || 0; } else { planData.durationDaysLongTerm = parseInt(document.getElementById('admin-plan-durationDays-long').value) || 0; planData.dailyProfitPercentLongTerm = parseFloat(document.getElementById('admin-plan-dailyProfitPercent-long').value) || 0; planData.dailyProfitFixedLongTerm = parseFloat(document.getElementById('admin-plan-dailyProfitFixed-long').value) || 0; planData.totalProfitPercentLongTerm = parseFloat(document.getElementById('admin-plan-totalProfitPercent-long').value) || 0; } const dbPayload = mapAppPlanToDbPlan(planData); try { if (planId) { const { error } = await supabase.from(DB_TABLES.INVESTMENT_PLANS).update(dbPayload).eq('id', planId); if (error) throw error; await adminAddSystemLog('Updated Plan', `Plan ID: ${planId}, Name: ${planData.name}`); window.showToast('Plan updated successfully!', 'success'); } else { const { data: newPlan, error } = await supabase.from(DB_TABLES.INVESTMENT_PLANS).insert(dbPayload).select().single(); if (error) throw error; await adminAddSystemLog('Created Plan', `Name: ${newPlan.name}, ID: ${newPlan.id}`); window.showToast('Plan created successfully!', 'success'); } window.closeModal('adminEditPlanModal'); await loadAdminPlanManagementTabContent(); await loadEffectiveConfig();  } catch (e) { console.error("Error saving plan:", e); window.showToast(e.message || "Failed to save plan.", "error"); } }
+window.adminTogglePlanStatus = async function(planId, newStatus) { if (currentUser.profile.role !== 'super_admin') { return window.showToast("Only Super Admins can change plan status.", "error"); } try { const { error } = await supabase.from(DB_TABLES.INVESTMENT_PLANS).update({ is_enabled: newStatus }).eq('id', planId); if (error) throw error; await adminAddSystemLog(`${newStatus ? 'Enabled' : 'Disabled'} Plan`, `Plan ID: ${planId}`); window.showToast(`Plan status updated to ${newStatus ? 'Enabled' : 'Disabled'}.`, "success"); await loadEffectiveConfig(); await loadAdminPlanManagementTabContent();  } catch (e) { console.error("Error toggling plan status:", e); window.showToast(e.message || "Failed to update plan status.", "error"); } };
+async function loadAdminContentManagementTabContent() {  const targetTab = document.getElementById('admin-contentManagement-tab');  if(!targetTab) return; targetTab.querySelector('#admin-features-list').innerHTML = '<div class="loader"></div>'; targetTab.querySelector('#admin-testimonials-list').innerHTML = '<div class="loader"></div>'; targetTab.querySelector('#admin-faqs-list').innerHTML = '<div class="loader"></div>'; if (dashboardElements.adminHeroHeadlineInput) dashboardElements.adminHeroHeadlineInput.value = NFX_CONFIG.heroContent.headline; if (dashboardElements.adminHeroSubheadlineInput) dashboardElements.adminHeroSubheadlineInput.value = NFX_CONFIG.heroContent.subheadline; await renderAdminEditableList('feature', NFX_CONFIG.features, dashboardElements.adminFeaturesList, ['icon_class', 'title', 'description'], ['Icon Class (Font Awesome)', 'Title', 'Description']); await renderAdminEditableList('testimonial', NFX_CONFIG.testimonials, dashboardElements.adminTestimonialsList, ['quote', 'author', 'role', 'avatar_url'], ['Quote', 'Author', 'Role', 'Avatar URL']); await renderAdminEditableList('faq', NFX_CONFIG.faqs, dashboardElements.adminFaqsList, ['question', 'answer'], ['Question', 'Answer']); }
+async function renderAdminEditableList(type, items, container, fields, fieldLabels) { if (!container) { console.warn("Container for admin editable list not found:", type); return; } container.innerHTML = ''; if (!items || items.length === 0) { container.innerHTML = `<p style="padding:10px;">No ${type}s defined. Click "Add ${type.charAt(0).toUpperCase() + type.slice(1)}" to create one.</p>`; return; } items.forEach(item => { const div = document.createElement('div'); div.classList.add('admin-managed-item');  let contentHTML = ''; fields.forEach((fieldKey, index) => {  const label = fieldLabels[index] || fieldKey.charAt(0).toUpperCase() + fieldKey.slice(1).replace(/_([a-z])/g, (g) => ` ${g[1].toUpperCase()}`); let displayValue = item[fieldKey]; if (type === 'testimonial' && fieldKey === 'avatar_url') { displayValue = item.avatar; } contentHTML += `<p><strong>${label}:</strong> ${displayValue || 'N/A'}</p>`; }); div.innerHTML = `${contentHTML} <div class="actions"> <button class="button button-small" onclick="window.openAdminContentModal('${type}', ${item.id})"><i class="fas fa-edit"></i> Edit</button> <button class="button button-small button-danger" onclick="window.adminDeleteContentItem('${type}', ${item.id})"><i class="fas fa-trash"></i> Delete</button> </div>`; container.appendChild(div); }); }
+window.openAdminContentModal = async function (type, dbId = null) { if (currentUser.profile.role !== 'super_admin') return window.showToast("Action restricted.", "error"); const modal = dashboardElements.adminEditContentModal;  const titleEl = dashboardElements.adminEditContentTitle; const idInput = dashboardElements.adminEditContentIdInput;  const typeInput = dashboardElements.adminEditContentTypeInput; const fieldsContainer = dashboardElements.adminContentFieldsContainer; if (!modal || !titleEl || !idInput || !typeInput || !fieldsContainer || !forms.adminEditContent) return; forms.adminEditContent.reset();  fieldsContainer.innerHTML = '';  typeInput.value = type; let currentItemData = null;  let fieldsToEdit = [];  let fieldLabels = []; let fieldTypes = {}; switch (type) { case 'feature': fieldsToEdit = ['icon_class', 'title', 'description'];  fieldLabels = ['Icon Class (e.g., fas fa-star)', 'Title', 'Description']; fieldTypes = { 'description': 'textarea' }; if (dbId) currentItemData = NFX_CONFIG.features.find(f => f.id === dbId); titleEl.innerHTML = `<i class="fas fa-star"></i> ${dbId ? 'Edit' : 'Add'} Feature`; break; case 'testimonial': fieldsToEdit = ['quote', 'author', 'role', 'avatar_url'];  fieldLabels = ['Quote', 'Author Name', 'Author Role/Title', 'Avatar Image URL']; fieldTypes = { 'quote': 'textarea' }; if (dbId) { currentItemData = NFX_CONFIG.testimonials.find(t => t.id === dbId); if (currentItemData) currentItemData.avatar_url = currentItemData.avatar;  } titleEl.innerHTML = `<i class="fas fa-comment-dots"></i> ${dbId ? 'Edit' : 'Add'} Testimonial`; break; case 'faq': fieldsToEdit = ['question', 'answer'];  fieldLabels = ['Question', 'Answer']; fieldTypes = { 'answer': 'textarea' }; if (dbId) currentItemData = NFX_CONFIG.faqs.find(f => f.id === dbId); titleEl.innerHTML = `<i class="fas fa-question-circle"></i> ${dbId ? 'Edit' : 'Add'} FAQ`; break; default: return window.showToast("Unknown content type.", "error"); } idInput.value = dbId || ''; fieldsToEdit.forEach((fieldKey, index) => { const labelText = fieldLabels[index]; let value = currentItemData ? (fieldKey === 'avatar_url' ? (currentItemData.avatar || '') : currentItemData[fieldKey]) : ''; const isTextarea = fieldTypes[fieldKey] === 'textarea'; const fg = document.createElement('div');  fg.classList.add('form-group');  fg.innerHTML = `<label for="content-${fieldKey}">${labelText}:</label>`; let inputEl; if (isTextarea) {  inputEl = document.createElement('textarea');  inputEl.rows = 3;  } else {  inputEl = document.createElement('input');  inputEl.type = (fieldKey === 'display_order') ? 'number' : 'text';  } inputEl.id = `content-${fieldKey}`;  inputEl.name = fieldKey;  inputEl.value = value || '';  inputEl.placeholder = labelText; if (fieldKey !== 'avatar_url' && fieldKey !== 'display_order') inputEl.required = true;  fg.appendChild(inputEl);  fieldsContainer.appendChild(fg); }); window.openModal('adminEditContentModal'); };
+window.adminDeleteContentItem = async function (type, dbId) { if (currentUser.profile.role !== 'super_admin') return window.showToast("Action restricted.", "error"); const confirmed = await showCustomConfirm(`Are you sure you want to DELETE this ${type} item (ID: ${dbId})? This cannot be undone.`, `Delete ${type}`); if (!confirmed) return; let tableName = ''; switch (type) { case 'feature': tableName = DB_TABLES.FEATURES; break; case 'testimonial': tableName = DB_TABLES.TESTIMONIALS; break; case 'faq': tableName = DB_TABLES.FAQS; break; default: window.showToast("Invalid content type for deletion.", "error"); return; } try { const { error } = await supabase.from(tableName).delete().eq('id', dbId); if (error) throw error; await adminAddSystemLog(`Deleted ${type}`, `ID: ${dbId}`); window.showToast(`${type.charAt(0).toUpperCase() + type.slice(1)} item deleted successfully.`, "success"); await loadEffectiveConfig(); await loadAdminContentManagementTabContent();  } catch (error) { console.error(`Error deleting ${type}:`, error); window.showToast(`Failed to delete ${type}. ${error.message}`, "error"); } };
+async function loadAdminSupportTicketsTabContent() { if (!dashboardElements.adminSupportTicketList || !dashboardElements.adminNoTicketsMessage) return; dashboardElements.adminSupportTicketList.innerHTML = '<div class="loader"></div>'; dashboardElements.adminNoTicketsMessage.classList.add('hidden'); try { let query = supabase.from(DB_TABLES.SUPPORT_TICKETS).select('*, profiles(full_name, email), support_ticket_messages(created_at, sender_role)').order('updated_at', { ascending: false }); const filterUserEmail = dashboardElements.adminTicketFilterUser.value.trim().toLowerCase(); if (filterUserEmail) query = query.ilike('profiles.email', `%${filterUserEmail}%`); const filterStatus = dashboardElements.adminTicketFilterStatus.value; if (filterStatus) query = query.eq('status', filterStatus); const { data: tickets, error } = await query; if (error) throw error; renderAdminSupportTicketList(tickets || []); } catch (err) { console.error("Error loading admin support tickets:", err); dashboardElements.adminSupportTicketList.innerHTML = `<p class="text-center form-message error">Failed to load tickets: ${err.message}</p>`; dashboardElements.adminNoTicketsMessage.classList.remove('hidden'); dashboardElements.adminNoTicketsMessage.textContent = "Error loading tickets."; } }
+function renderAdminSupportTicketList(tickets) { if (!dashboardElements.adminSupportTicketList || !dashboardElements.adminNoTicketsMessage) return; dashboardElements.adminSupportTicketList.innerHTML = ''; dashboardElements.adminNoTicketsMessage.classList.toggle('hidden', tickets.length > 0); if (tickets.length === 0) { dashboardElements.adminNoTicketsMessage.textContent = "No support tickets found matching criteria."; return; } const table = document.createElement('table'); table.innerHTML = `<thead><tr><th>Subject</th><th>User</th><th>Status</th><th>Last Update</th><th>Actions</th></tr></thead><tbody></tbody>`; const tbody = table.querySelector('tbody'); tickets.forEach(ticket => { const tr = tbody.insertRow(); tr.insertCell().textContent = ticket.subject; tr.insertCell().textContent = `${ticket.profiles?.full_name || 'N/A'} (${ticket.profiles?.email || 'N/A'})`; const statusCell = tr.insertCell(); statusCell.innerHTML = `<span class="ticket-status-${ticket.status.toLowerCase()}">${ticket.status.replace(/_/g, ' ')}</span>`; statusCell.dataset.currentStatus = ticket.status; statusCell.id = `ticket-status-cell-${ticket.id}`; const lastMessage = ticket.support_ticket_messages && ticket.support_ticket_messages.length > 0 ? ticket.support_ticket_messages.sort((a,b) => new Date(b.created_at) - new Date(a.created_at))[0] : null; tr.insertCell().textContent = formatDate(lastMessage ? lastMessage.created_at : ticket.updated_at, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }); const actionCell = tr.insertCell(); const viewBtn = document.createElement('button'); viewBtn.classList.add('button', 'button-small'); viewBtn.innerHTML = '<i class="fas fa-eye"></i> View/Reply'; viewBtn.onclick = () => window.openAdminSupportTicketModal(ticket.id); actionCell.appendChild(viewBtn); }); dashboardElements.adminSupportTicketList.appendChild(table); }
+window.openAdminSupportTicketModal = async function (ticketId) { if (!dashboardElements.adminViewSupportTicketTitle || !dashboardElements.adminTicketUserInfo || !dashboardElements.adminTicketStatusInfo || !dashboardElements.adminReplyTicketIdInput || !dashboardElements.adminTicketChangeStatusSelect || !dashboardElements.adminTicketChatMessages || !forms.adminReplyTicketForm || !dashboardElements.adminTicketReplyMessageInput) return; try { const { data: ticket, error: ticketError } = await supabase.from(DB_TABLES.SUPPORT_TICKETS).select('*, profiles(full_name, email)').eq('id', ticketId).single(); if (ticketError || !ticket) { window.showToast("Ticket not found.", "error"); return; } const { data: messages, error: messagesError } = await supabase.from(DB_TABLES.SUPPORT_TICKET_MESSAGES).select('*, profiles(full_name, role, id)').eq('ticket_id', ticketId).order('created_at', { ascending: true }); if (messagesError) throw messagesError; dashboardElements.adminViewSupportTicketTitle.textContent = `Ticket: ${ticket.subject}`; dashboardElements.adminTicketUserInfo.textContent = `${ticket.profiles?.full_name || 'N/A'} (${ticket.profiles?.email || 'N/A'})`; dashboardElements.adminTicketStatusInfo.innerHTML = `<span class="ticket-status-${ticket.status.toLowerCase()}">${ticket.status.replace(/_/g, ' ')}</span>`; dashboardElements.adminReplyTicketIdInput.value = ticketId; dashboardElements.adminTicketChangeStatusSelect.value = ticket.status; const chatMessagesEl = dashboardElements.adminTicketChatMessages; chatMessagesEl.innerHTML = ''; (messages || []).forEach(msg => { const msgDiv = document.createElement('div'); msgDiv.classList.add('support-chat-message', msg.sender_role === 'admin' ? 'admin' : 'user'); msgDiv.innerHTML = `<span class="sender">${msg.sender_role === 'admin' ? (msg.profiles?.full_name || 'Support') : (msg.profiles?.full_name || 'User')}</span><p>${msg.message_text.replace(/\n/g, '<br>')}</p><span class="timestamp">${formatDate(msg.created_at, { hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short' })}</span>`; chatMessagesEl.appendChild(msgDiv); }); chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight; forms.adminReplyTicketForm.reset(); const canModifyTicket = currentUser.profile.role === 'super_admin' || (currentUser.profile.role === 'assistant_admin' && ticket.status !== 'closed'); dashboardElements.adminTicketReplyMessageInput.disabled = !canModifyTicket; dashboardElements.adminTicketChangeStatusSelect.disabled = currentUser.profile.role !== 'super_admin'; const submitButton = forms.adminReplyTicketForm.querySelector('button[type="submit"]'); if (submitButton) { submitButton.disabled = !canModifyTicket; submitButton.classList.toggle('disabled', !canModifyTicket); } window.openModal('adminViewSupportTicketModal'); } catch (error) { console.error("Error opening admin support ticket modal:", error); window.showToast("Could not load ticket details.", "error"); }};
+async function loadAdminAnalyticsTabContent() { const targetTab = document.getElementById('admin-analytics-tab'); if (!targetTab) return; targetTab.innerHTML = '<div class="loader"></div>'; try { const [ { data: profiles, error: pError }, { data: txs, error: tError }, { data: investments, error: iError } ] = await Promise.all([ supabase.from('profiles').select('created_at, role'), supabase.from('transactions').select('created_at, type, amount, status').eq('status', 'approved'), supabase.from('user_investments').select('plan_name, status') ]); if (pError || tError || iError) throw new Error("Failed to fetch analytics data.");  const registrationData = profiles.reduce((acc, profile) => { const month = new Date(profile.created_at).toLocaleString('default', { month: 'short', year: 'numeric' }); acc[month] = (acc[month] || 0) + 1; return acc; }, {});  const txOverview = txs.reduce((acc, tx) => { if (['deposit', 'withdrawal'].includes(tx.type)) { acc[tx.type] = (acc[tx.type] || 0) + tx.amount; } return acc; }, { deposit: 0, withdrawal: 0 }); const planPopularity = investments.filter(inv => inv.status === 'active').reduce((acc, inv) => { acc[inv.plan_name] = (acc[inv.plan_name] || 0) + 1; return acc; }, {}); const txVolume = txs.reduce((acc, tx) => { acc[tx.type] = (acc[tx.type] || 0) + 1; return acc; }, {}); const analyticsGrid = targetTab.querySelector('.admin-analytics-grid'); if (!analyticsGrid) return; analyticsGrid.innerHTML = ` <div><h4>User Registrations (Monthly)</h4><div class="chart-container"><canvas id="adminUserRegistrationChart"></canvas></div></div> <div><h4>Transaction Overview (Approved)</h4><div class="chart-container"><canvas id="adminTransactionOverviewChart"></canvas></div></div> <div><h4>Active Plan Popularity</h4><div class="chart-container"><canvas id="adminPlanPopularityChart"></canvas></div></div> <div><h4>Transaction Volume by Type</h4><div class="chart-container"><canvas id="adminTransactionVolumeChart"></canvas></div></div> `;  new Chart(document.getElementById('adminUserRegistrationChart'), { type: 'bar', data: { labels: Object.keys(registrationData), datasets: [{ label: 'Registrations', data: Object.values(registrationData), backgroundColor: 'var(--primary-color)' }] } }); new Chart(document.getElementById('adminTransactionOverviewChart'), { type: 'pie', data: { labels: ['Deposits', 'Withdrawals'], datasets: [{ data: [txOverview.deposit, txOverview.withdrawal], backgroundColor: ['var(--success-color)', 'var(--accent-color)'] }] } }); new Chart(document.getElementById('adminPlanPopularityChart'), { type: 'doughnut', data: { labels: Object.keys(planPopularity), datasets: [{ data: Object.values(planPopularity), backgroundColor: ['#0077b6', '#00b4d8', '#90e0ef', '#caf0f8'] }] } }); new Chart(document.getElementById('adminTransactionVolumeChart'), { type: 'polarArea', data: { labels: Object.keys(txVolume), datasets: [{ data: Object.values(txVolume), backgroundColor: ['#ef476f', '#ffd166', '#06d6a0', '#118ab2', '#073b4c', '#f78c6b'] }] } }); } catch (err) { targetTab.innerHTML = `<div class="dashboard-card"><p class="form-message error">Failed to load analytics: ${err.message}</p></div>`; } }
+async function loadAdminGlobalSettingsTabContent() { const targetTab = document.getElementById('admin-settings-tab'); if(!targetTab) return; populateAdminGlobalSettingsForm(); await renderAdminCurrenciesList(); }
+async function populateAdminGlobalSettingsForm() { if (!forms.adminGlobalSettings || !dashboardElements.adminSettingAppName) return; dashboardElements.adminSettingAppName.value = NFX_CONFIG.appName; dashboardElements.adminSettingStatsUsers.value = NFX_CONFIG.siteStats.users; dashboardElements.adminSettingStatsInvested.value = NFX_CONFIG.siteStats.investedBase || 0; dashboardElements.adminSettingStatsProfit.value = NFX_CONFIG.siteStats.profitBase || 0; dashboardElements.adminSettingReferralBonus.value = NFX_CONFIG.referralBonusAmount; dashboardElements.adminSettingWithdrawalFee.value = NFX_CONFIG.withdrawalFeePercent; dashboardElements.adminSettingMinWithdrawal.value = NFX_CONFIG.minWithdrawalAmount; dashboardElements.adminSettingMaxWithdrawal.value = NFX_CONFIG.maxWithdrawalAmount; dashboardElements.adminMaintenanceModeToggle.checked = NFX_CONFIG.maintenanceMode; dashboardElements.adminMaintenanceModeStatus.textContent = NFX_CONFIG.maintenanceMode ? "Enabled" : "Disabled"; if(dashboardElements.adminSettingDefaultCurrencySelect) { dashboardElements.adminSettingDefaultCurrencySelect.innerHTML = ''; (NFX_CONFIG.currencies || []).forEach(curr => { const option = document.createElement('option'); option.value = curr.code; option.textContent = `${curr.code} (${curr.symbol})`; if (NFX_CONFIG.defaultCurrency && curr.code === NFX_CONFIG.defaultCurrency.code) option.selected = true; dashboardElements.adminSettingDefaultCurrencySelect.appendChild(option); }); } updateCurrencyDisplays(); }
+async function renderAdminCurrenciesList() { if (!dashboardElements.adminCurrenciesListDiv) return; dashboardElements.adminCurrenciesListDiv.innerHTML = '<div class="loader"></div>'; try { const { data: currencies, error } = await supabase.from(DB_TABLES.CURRENCIES).select('*').order('code'); if (error) throw error; if (!currencies || currencies.length === 0) { dashboardElements.adminCurrenciesListDiv.innerHTML = '<p>No currencies configured.</p>'; return; } dashboardElements.adminCurrenciesListDiv.innerHTML = currencies.map(curr => ` <div class="admin-managed-item"> <p><strong>Code:</strong> ${curr.code} | <strong>Symbol:</strong> ${curr.symbol}</p> <div class="actions"> <button class="button button-small" onclick="window.adminOpenCurrencyModal('${curr.code}')">Edit</button> <button class="button button-small button-danger" onclick="window.adminDeleteCurrency('${curr.code}')">Delete</button> </div> </div> `).join(''); } catch (e) { console.error("Error rendering currencies list:", e); dashboardElements.adminCurrenciesListDiv.innerHTML = '<p class="form-message error">Could not load currencies.</p>'; } }
+window.adminOpenCurrencyModal = (code = null) => { if (currentUser.profile.role !== 'super_admin') return window.showToast("Action restricted.", "error"); forms.adminCurrency.reset(); dashboardElements.adminCurrencyOriginalCodeInput.value = code || ''; dashboardElements.adminCurrencyCodeInput.readOnly = !!code; if (code) { const currency = NFX_CONFIG.currencies.find(c => c.code === code); if (currency) { dashboardElements.adminCurrencyCodeInput.value = currency.code; dashboardElements.adminCurrencySymbolInput.value = currency.symbol; dashboardElements.adminCurrencyModalTitle.textContent = "Edit Currency"; } else { window.showToast("Currency not found for editing.", "error"); return; } } else { dashboardElements.adminCurrencyModalTitle.textContent = "Add New Currency"; } window.openModal('adminCurrencyModal'); };
+window.adminDeleteCurrency = async (code) => { if (currentUser.profile.role !== 'super_admin') return window.showToast("Action restricted.", "error"); if (code === NFX_CONFIG.defaultCurrency.code) return window.showToast("Cannot delete the default site currency.", "warning"); const confirmed = await showCustomConfirm(`Delete currency ${code}?`, "Delete Currency"); if (!confirmed) return; try { const { error } = await supabase.from(DB_TABLES.CURRENCIES).delete().eq('code', code); if (error) throw error; await adminAddSystemLog('Deleted Currency', `Code: ${code}`); window.showToast("Currency deleted.", "success"); await loadEffectiveConfig(); await loadAdminGlobalSettingsTabContent(); } catch(err) {console.error("Error deleting currency:", err); window.showToast("Failed to delete currency.", "error");} };
+async function loadAdminSystemLogTabContent() { if (!dashboardElements.adminSystemLogList) return; dashboardElements.adminSystemLogList.innerHTML = '<div class="loader"></div>'; try { const { data: logs, error } = await supabase.from(DB_TABLES.ADMIN_SYSTEM_LOG).select('*').order('created_at', { ascending: false }).limit(200); if (error) throw error; dashboardElements.adminSystemLogList.innerHTML = (!logs || logs.length === 0) ? '<p class="text-center" style="padding: 20px;">No system logs found.</p>' : logs.map(log => ` <div class="admin-managed-item" style="font-size: 0.8rem; line-height: 1.4;"> <p><strong>Time:</strong> ${formatDate(log.created_at)}</p> <p><strong>Admin:</strong> ${log.admin_email}</p> <p><strong>Action:</strong> ${log.action_text}</p> <p><strong>Details:</strong> ${log.details || 'N/A'}</p> ${log.target_user_id ? `<p><strong>Target User ID:</strong> ${log.target_user_id}</p>` : ''} </div>`).join(''); } catch (error) { console.error("Error loading system logs:", error); dashboardElements.adminSystemLogList.innerHTML = `<p class="text-center form-message error">Error loading system logs.</p>`; } }
+window.adminClearSystemLog = async function() { if (currentUser.profile.role !== 'super_admin') return window.showToast("Action restricted to Super Admin.", "error"); const confirmed = await showCustomConfirm("Are you sure you want to CLEAR ALL system logs? This is irreversible.", "Clear System Log"); if (!confirmed) return; try { const { error } = await supabase.from(DB_TABLES.ADMIN_SYSTEM_LOG).delete().not('id', 'is', null); if (error) throw error; await adminAddSystemLog('Cleared System Log', 'All previous logs were deleted.'); window.showToast("System log cleared successfully.", "success"); await loadAdminSystemLogTabContent(); } catch (error) { console.error("Error clearing system logs:", error); window.showToast("Failed to clear system log.", "error"); } };
+window.openAdminViewUserModal = async (userId) => { if (!dashboardElements.adminViewUserModal || !dashboardElements.adminViewUserTitle || !dashboardElements.adminViewUserDetails) return; try { const { data: userToView, error } = await supabase.from(DB_TABLES.PROFILES).select('*, user_investments:user_investments(*)').eq('id', userId).single(); if (error || !userToView) { window.showToast("User not found.", "error"); return; } dashboardElements.adminViewUserTitle.innerHTML = `<i class="fas fa-user-check"></i> User: ${userToView.full_name}`; const userDisplayCurrency = userToView.locked_currency || getGlobalDisplayCurrency(); let investmentsHTML = 'No active investments.'; if (userToView.user_investments && userToView.user_investments.length > 0) { investmentsHTML = userToView.user_investments.map(inv => { const invCurrency = NFX_CONFIG.currencies.find(c => c.code === inv.currency) || userDisplayCurrency; let durationTextForModal = inv.is_short_term ? ((inv.duration_days_short_term || 0) + 'd ' + (inv.duration_minutes_short_term || 0) + 'm').trim() || "Short Period" : `${inv.duration_days_long_term}d`; return `<div class="investment-details-modal"><p><strong>Plan:</strong> ${inv.plan_name} (ID: ...${String(inv.id).slice(-4)})</p><p><strong>Invested:</strong> ${formatCurrencyValue(inv.amount, invCurrency)}</p><p><strong>Start:</strong> ${formatDate(inv.start_date)}</p><p><strong>Duration:</strong> ${durationTextForModal}</p><p><strong>Profit:</strong> ${formatCurrencyValue(inv.accumulated_profit || 0, invCurrency)}</p><p><strong>Status:</strong> ${inv.status}</p></div>`; }).join(''); } const avatarUrl = userToView.profile_pic_url ? supabase.storage.from('avatars').getPublicUrl(userToView.profile_pic_url).data.publicUrl : `https://i.pravatar.cc/150?u=${userToView.id}`; dashboardElements.adminViewUserDetails.innerHTML = `<img src="${avatarUrl}" alt="Avatar" class="profile-picture" style="width:80px;height:80px;margin-bottom:10px; border-radius:50%; object-fit:cover;" onerror="this.onerror=null;this.src='https://i.pravatar.cc/150?u=${userToView.id}';"> <p><strong>ID:</strong> ${userToView.id}</p><p><strong>Name:</strong> ${userToView.full_name}</p> <p><strong>Email:</strong> ${userToView.email}</p><p><strong>Joined:</strong> ${formatDate(userToView.created_at || currentUser.authUser.created_at)}</p> <p><strong>Last Login:</strong> ${userToView.last_login_at ? formatDate(userToView.last_login_at) : 'N/A'}</p> <p><strong>Wallet Balance:</strong> ${formatCurrencyValue(userToView.wallet_balance || 0, userDisplayCurrency)}</p> <p><strong>Total Realized Profit:</strong> ${formatCurrencyValue(userToView.total_realized_profit || 0, userDisplayCurrency)}</p> <p><strong>Account Currency:</strong> ${userToView.locked_currency ? `${userToView.locked_currency.code} (Locked)` : `${getGlobalDisplayCurrency().code} (Global)`}</p> <p><strong>Status:</strong> <span class="${userToView.is_suspended ? 'status-suspended' : 'status-approved'}">${userToView.is_suspended ? 'Suspended' : 'Active'}</span></p> <p><strong>Role:</strong> ${userToView.role.replace('_',' ').replace(/\b\w/g, l => l.toUpperCase())}</p> <hr style="margin:10px 0;"><h4>Active Investments: (${userToView.user_investments ? userToView.user_investments.length : 0})</h4>${investmentsHTML} <hr style="margin:10px 0;"><p><strong>Referral Code:</strong> ${userToView.referral_code}</p> <p><strong>Referred By UserID:</strong> ${userToView.referred_by_user_id || 'N/A'}</p> <p><strong>2FA Enabled:</strong> ${userToView.is_2fa_enabled ? 'Yes' : 'No'}</p>`; window.openModal('adminViewUserModal'); } catch(error) {console.error("Error opening view user modal:", error); window.showToast("Could not load user details.", "error");} };
+window.openAdminEditUserModal = async (userId) => { if (currentUser.profile.role !== 'super_admin') return window.showToast("Action restricted.", "error"); const { data: user, error } = await supabase.from(DB_TABLES.PROFILES).select('*').eq('id', userId).single(); if (error || !user) { window.showToast("User not found.", "error"); return; } dashboardElements.adminEditUserIdInput.value = user.id; dashboardElements.adminEditUserNameInput.value = user.full_name; dashboardElements.adminEditUserEmailInput.value = user.email; dashboardElements.adminEditUserEmailInput.disabled = true; dashboardElements.adminEditUserPasswordInput.value = ''; dashboardElements.adminEditUserCreditInput.value = ''; dashboardElements.adminEditUserCreditReasonInput.value = ''; dashboardElements.adminEditUserBonusInput.value = ''; dashboardElements.adminEditUserBonusReasonInput.value = ''; dashboardElements.adminEditUserSuspendedToggle.checked = user.is_suspended; dashboardElements.adminEditUserRoleSelect.value = user.role; dashboardElements.adminDirectMessageTextInput.value = ''; dashboardElements.adminEditUserTitle.innerHTML = `<i class="fas fa-user-edit"></i> Edit User: ${user.full_name}`; window.openModal('adminEditUserModal'); };
+window.adminToggleMaintenanceMode = async function (isChecked) { if (!currentUser || currentUser.profile.role !== 'super_admin') return window.showToast("Action restricted.", "error"); try { const { error } = await supabase.from(DB_TABLES.SITE_SETTINGS).update({ maintenance_mode: isChecked }).eq('id', 1); if (error) throw error; NFX_CONFIG.maintenanceMode = isChecked; dashboardElements.maintenanceModeBanner.classList.toggle('hidden', !isChecked); dashboardElements.adminMaintenanceModeStatus.textContent = isChecked ? "Enabled" : "Disabled"; await adminAddSystemLog('Toggled Maintenance Mode', `Set to: ${isChecked ? 'ON' : 'OFF'}`); window.showToast(`Maintenance mode ${isChecked ? 'enabled' : 'disabled'}.`, 'info'); } catch(err) { console.error("Error toggling maintenance mode:", err); window.showToast("Failed to toggle maintenance mode.", "error"); dashboardElements.adminMaintenanceModeToggle.checked = !isChecked; }};
+
+// --- Custom Confirm Modal Logic ---
+async function showCustomConfirm(message, title = "Confirmation") {
+    return new Promise((resolve) => {
+        customConfirmResolve = resolve; 
+        const modal = document.getElementById('customConfirmModal');
+        const modalTitle = document.getElementById('customConfirmModalTitle');
+        const modalMessage = document.getElementById('customConfirmModalMessage');
+        const okButton = document.getElementById('customConfirmModalOk');
+        const cancelButton = document.getElementById('customConfirmModalCancel');
+        if (!modal || !modalTitle || !modalMessage || !okButton || !cancelButton) {
+            console.error("Custom confirm modal elements not found!");
+            resolve(window.confirm(message)); 
+            return;
+        }
+        modalTitle.textContent = title;
+        modalMessage.textContent = message;
+        // Re-cloning the button removes any previous event listeners, which is a safe way to handle this.
+        const newOkButton = okButton.cloneNode(true);
+        okButton.parentNode.replaceChild(newOkButton, okButton);
+        const newCancelButton = cancelButton.cloneNode(true);
+        cancelButton.parentNode.replaceChild(newCancelButton, cancelButton);
+        newOkButton.onclick = () => { window.closeModal('customConfirmModal'); if (customConfirmResolve) customConfirmResolve(true); };
+        newCancelButton.onclick = () => { window.closeModal('customConfirmModal'); if (customConfirmResolve) customConfirmResolve(false); };
+        window.openModal('customConfirmModal'); 
+    });
+}
+
+
+// ##################################################################
+// ################      INITIALIZATION & EVENTS     ################
+// ##################################################################
+async function initApp() {
+    console.log("initApp CALLED.");
+    try { 
+        // --- Dark Mode Initialization & Sync ---
+        const darkModeAdminToggle = document.getElementById('dark-mode-toggle-admin');
+        const darkModeUserToggle = document.getElementById('dark-mode-toggle-user');
+        const setDarkMode = (isDark) => {
+            document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+            if(darkModeAdminToggle) darkModeAdminToggle.checked = isDark;
+            if(darkModeUserToggle) darkModeUserToggle.checked = isDark;
+            localStorage.setItem('nfxTheme', isDark ? 'dark' : 'light');
+        };
+        const savedTheme = localStorage.getItem('nfxTheme');
+        setDarkMode(savedTheme === 'dark');
+        darkModeAdminToggle?.addEventListener('change', (e) => setDarkMode(e.target.checked));
+        darkModeUserToggle?.addEventListener('change', (e) => setDarkMode(e.target.checked));
+
+        // --- Mobile Menu ---
+        const menuToggle = document.getElementById('mobile-menu-toggle');
+        const mainNav = document.getElementById('main-nav');
+        menuToggle?.addEventListener('click', () => {
+            const isExpanded = mainNav.classList.toggle('active');
+            menuToggle.setAttribute('aria-expanded', isExpanded);
+        });
+        mainNav?.addEventListener('click', (e) => {
+            if (e.target.tagName === 'A' && window.innerWidth <= 992) {
+                mainNav.classList.remove('active');
+                menuToggle.setAttribute('aria-expanded', 'false');
+            }
+        });
+
+        document.getElementById('current-year').textContent = String(new Date().getFullYear());
+        setupNavigation();
+        await loadEffectiveConfig(); 
+        dashboardElements.maintenanceModeBanner.classList.toggle('hidden', !NFX_CONFIG.maintenanceMode);
+        animationObserver = new IntersectionObserver((entries, observer) => { entries.forEach(entry => { if (entry.isIntersecting) { entry.target.classList.add('is-visible'); observer.unobserve(entry.target); } }); }, { threshold: 0.1 });
+        document.querySelectorAll('.aos').forEach(el => animationObserver.observe(el));
+        const statsObserver = new IntersectionObserver((entries, observer) => { entries.forEach(entry => { if (entry.isIntersecting) { document.querySelectorAll('.stats-bar [data-target]').forEach(el => { const target = +el.getAttribute('data-target'); const duration = 1500; let current = 0; const stepTime = 16;  const increment = target / (duration / stepTime); const updateCount = () => { current += increment; if (current < target) { const formatted = Math.ceil(current).toLocaleString(); el.innerHTML = el.id === 'stats-users' ? `${formatted}+` : `$${formatted}+`; requestAnimationFrame(updateCount); } else { const formattedTarget = target.toLocaleString(); el.innerHTML = el.id === 'stats-users' ? `${formattedTarget}+` : `$${formattedTarget}+`; } }; requestAnimationFrame(updateCount); }); observer.unobserve(entry.target); } }); }, { threshold: 0.8 });
+        const statsBar = document.querySelector('.stats-bar');
+        if (statsBar) { updateStatsBar(); statsObserver.observe(statsBar); }
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        if (sessionError) throw sessionError;
+        if (session && session.user) {
+            const { data: profileData, error: profileError } = await supabase.from(DB_TABLES.PROFILES).select(`*, user_investments: ${DB_TABLES.USER_INVESTMENTS}(*), transactions: ${DB_TABLES.TRANSACTIONS}(*)`).eq('id', session.user.id).single();
+            if (profileError) { if (profileError.code === 'PGRST116') { window.showToast("User profile incomplete. Logging out.", "error"); await supabase.auth.signOut(); updateNavForLogoutState(); window.navigateToSection('home', 'nav-home'); return; } throw profileError; }
+            if (NFX_CONFIG.maintenanceMode && !['super_admin', 'assistant_admin'].includes(profileData.role)) { await handleLogout(); window.showToast("Site under maintenance. Please try again later.", "warning", 5000); return; }
+            currentUser = { authUser: session.user, profile: profileData };
+            currentUser.profile.investments = currentUser.profile.user_investments || []; 
+            currentUser.profile.transactions = currentUser.profile.transactions || [];
+            delete currentUser.profile.user_investments;
+            updateNavForLoginState(); await initAdminCurrencySelector(); 
+            if (['super_admin', 'assistant_admin'].includes(profileData.role)) { await loadAdminPanel(); } else { await loadDashboard(); }
+        } else { updateNavForLogoutState(); window.navigateToSection('home', 'nav-home'); await initAdminCurrencySelector();  }
+        if (dashboardElements.profitCalcButton) { dashboardElements.profitCalcButton.addEventListener('click', calculateProfitProjection); }
+        document.addEventListener('click', function (event) { if (dashboardElements.notificationsDropdownContainer && !dashboardElements.notificationsDropdownContainer.contains(event.target) && dashboardElements.userNotificationBell && !dashboardElements.userNotificationBell.contains(event.target)) { dashboardElements.notificationsDropdownContainer.classList.remove('show'); } });
+        
+        // --- NEW: PDF Export Button Listener ---
+        dashboardElements.exportPdfButton?.addEventListener('click', exportTransactionsToPDF);
+        
+        // --- Admin "Clear Filter" Button Listeners (FIXED & VERIFIED) ---
+        dashboardElements.adminClearUserFiltersBtn?.addEventListener('click', () => { 
+            if(dashboardElements.adminUserFilterName) dashboardElements.adminUserFilterName.value = ''; 
+            if(dashboardElements.adminUserFilterStatus) dashboardElements.adminUserFilterStatus.value = ''; 
+            renderAdminUserTable(currentAdminUserListCache); 
+        });
+        dashboardElements.adminClearTxFiltersBtn?.addEventListener('click', () => { 
+            if(dashboardElements.adminTxFilterUser) dashboardElements.adminTxFilterUser.value = ''; 
+            if(dashboardElements.adminTxFilterType) dashboardElements.adminTxFilterType.value = ''; 
+            loadAdminAllTransactionsTabContent(); 
+        });
+        dashboardElements.adminClearTicketFiltersBtn?.addEventListener('click', () => {
+            if(dashboardElements.adminTicketFilterUser) dashboardElements.adminTicketFilterUser.value = '';
+            if(dashboardElements.adminTicketFilterStatus) dashboardElements.adminTicketFilterStatus.value = '';
+            loadAdminSupportTicketsTabContent();
+        });
+        
+        // --- Other Admin Event Listeners ---
+        dashboardElements.adminApplyUserFiltersBtn?.addEventListener('click', () => { const nameFilter = dashboardElements.adminUserFilterName.value.trim().toLowerCase(); const statusFilter = dashboardElements.adminUserFilterStatus.value; const filteredUsers = currentAdminUserListCache.filter(user => { const nameMatch = !nameFilter || (user.full_name && user.full_name.toLowerCase().includes(nameFilter)) || (user.email && user.email.toLowerCase().includes(nameFilter)); let statusMatch = true; if (statusFilter) { if (statusFilter === 'suspended') statusMatch = user.is_suspended; else if (statusFilter === 'active') statusMatch = !user.is_suspended && user.role === 'user';  else statusMatch = user.role === statusFilter; } return nameMatch && statusMatch; }); renderAdminUserTable(filteredUsers); });
+        dashboardElements.adminApplyTxFiltersBtn?.addEventListener('click', () => { loadAdminAllTransactionsTabContent({ userEmail: dashboardElements.adminTxFilterUser.value, type: dashboardElements.adminTxFilterType.value }); });
+        dashboardElements.adminApplyTicketFiltersBtn?.addEventListener('click', () => { loadAdminSupportTicketsTabContent(); });
+        dashboardElements.adminClearBroadcastBtn?.addEventListener('click', async () => { if(!currentUser || currentUser.profile.role !== 'super_admin') return window.showToast("Action restricted.", "error"); try { await supabase.from(DB_TABLES.BROADCAST_MESSAGES).update({is_active: false}).eq('is_active', true); NFX_CONFIG.activeBroadcastMessage = null; displayBroadcastMessage(); window.showToast("Broadcast message cleared.", "info"); await adminAddSystemLog('Cleared Broadcast Message'); document.getElementById('admin-broadcast-message').value = ''; } catch(err){console.error("Error clearing broadcast:", err); window.showToast("Failed to clear broadcast.", "error");} });
+        
+        if (dashboardElements.adminPlanIsShortTermToggle) { dashboardElements.adminPlanIsShortTermToggle.addEventListener('change', (e) => { togglePlanFieldVisibility(e.target.checked); }); }
+        if(forms.adminEditPlan) { forms.adminEditPlan.addEventListener('submit', async (e) => { e.preventDefault(); await adminSavePlan();  }); }
+        if(forms.adminHeroContent) forms.adminHeroContent.addEventListener('submit', async (e) => { e.preventDefault(); if(!currentUser || currentUser.profile.role !== 'super_admin') return window.showToast("Action restricted.", "error"); const newHeadline = dashboardElements.adminHeroHeadlineInput.value.trim(); const newSubheadline = dashboardElements.adminHeroSubheadlineInput.value.trim(); if(newHeadline && newSubheadline){ try { const {error} = await supabase.from(DB_TABLES.HERO_CONTENT).update({headline: newHeadline, subheadline: newSubheadline}).eq('id', 1); if(error) throw error; NFX_CONFIG.heroContent = {headline: newHeadline, subheadline: newSubheadline}; renderHeroContent(); window.showToast("Hero content updated!", "success"); await adminAddSystemLog('Updated Hero Content');} catch(err){console.error("Error updating hero content:", err); window.showToast("Failed to update hero content.", "error");}} else {window.showToast("Headline and subheadline cannot be empty.", "error");} });
+        if(forms.adminBroadcast) forms.adminBroadcast.addEventListener('submit', async(e) => { e.preventDefault(); if(!currentUser || currentUser.profile.role !== 'super_admin') return window.showToast("Action restricted.", "error"); const message = document.getElementById('admin-broadcast-message').value.trim(); if(!message) return window.showToast("Message cannot be empty.", "error"); try { await supabase.from(DB_TABLES.BROADCAST_MESSAGES).update({is_active: false}).eq('is_active', true); const {data: newMsg, error} = await supabase.from(DB_TABLES.BROADCAST_MESSAGES).insert({message_text: message, created_by: currentUser.authUser.id, is_active: true}).select().single(); if(error) throw error; NFX_CONFIG.activeBroadcastMessage = {text: newMsg.message_text, timestamp: newMsg.created_at}; displayBroadcastMessage(); window.showToast("Broadcast message sent!", "success"); await adminAddSystemLog('Sent Broadcast', message.substring(0,50)); document.getElementById('admin-broadcast-message').value = ''; } catch(err) {console.error("Error sending broadcast:", err); window.showToast("Failed to send broadcast.", "error");} });
+        if(forms.adminGlobalSettings) forms.adminGlobalSettings.addEventListener('submit', async (e) => { e.preventDefault(); if (currentUser.profile.role !== 'super_admin') return window.showToast("Action restricted.", "error"); const updates = { app_name: dashboardElements.adminSettingAppName.value.trim(), site_stats: { users: dashboardElements.adminSettingStatsUsers.value.trim(), investedBase: parseInt(dashboardElements.adminSettingStatsInvested.value) || 0, profitBase: parseInt(dashboardElements.adminSettingStatsProfit.value) || 0 }, referral_bonus_amount: parseFloat(dashboardElements.adminSettingReferralBonus.value) || 0, withdrawal_fee_percent: parseFloat(dashboardElements.adminSettingWithdrawalFee.value) || 0, min_withdrawal_amount: parseFloat(dashboardElements.adminSettingMinWithdrawal.value) || 0, max_withdrawal_amount: parseFloat(dashboardElements.adminSettingMaxWithdrawal.value) || 0, default_currency: NFX_CONFIG.currencies.find(c => c.code === dashboardElements.adminSettingDefaultCurrencySelect.value) || NFX_CONFIG.defaultCurrency }; try { const {error} = await supabase.from(DB_TABLES.SITE_SETTINGS).update(updates).eq('id', 1); if(error) throw error; await loadEffectiveConfig(); window.showToast("Global settings updated!", "success"); await adminAddSystemLog('Updated Global Settings');} catch(err){ console.error("Error saving global settings:", err); window.showToast("Failed to save settings.", "error");} });
+        if(forms.adminCurrency) forms.adminCurrency.addEventListener('submit', async (e) => { e.preventDefault(); if (currentUser.profile.role !== 'super_admin') return window.showToast("Action restricted.", "error"); const code = dashboardElements.adminCurrencyCodeInput.value.trim().toUpperCase(); const symbol = dashboardElements.adminCurrencySymbolInput.value.trim(); const originalCode = dashboardElements.adminCurrencyOriginalCodeInput.value; if(!code || !symbol || code.length > 3) return window.showToast("Invalid currency data.", "error"); try { if(originalCode && originalCode !== code) { await supabase.from(DB_TABLES.CURRENCIES).delete().eq('code', originalCode); await supabase.from(DB_TABLES.CURRENCIES).insert({code: code, symbol: symbol}); } else if (originalCode && originalCode === code) { const {error} = await supabase.from(DB_TABLES.CURRENCIES).update({symbol: symbol}).eq('code', code); if(error) throw error; } else { const {error} = await supabase.from(DB_TABLES.CURRENCIES).insert({code: code, symbol: symbol}); if(error) throw error; } await adminAddSystemLog(`${originalCode ? 'Updated' : 'Added'} Currency`, `Code: ${code}, Symbol: ${symbol}`); window.showToast(`Currency ${originalCode ? 'updated' : 'added'}!`, "success"); await loadEffectiveConfig(); await loadAdminGlobalSettingsTabContent(); window.closeModal('adminCurrencyModal'); } catch(err) {console.error("Error saving currency:", err); window.showToast(`Failed to save currency: ${err.message}`, "error");} });
+        if(forms.adminEditContent) forms.adminEditContent.addEventListener('submit', async (e) => { e.preventDefault(); if (currentUser.profile.role !== 'super_admin') return window.showToast("Action restricted.", "error"); const dbId = dashboardElements.adminEditContentIdInput.value; const type = dashboardElements.adminEditContentTypeInput.value; const formData = new FormData(forms.adminEditContent); const itemDataForDB = {}; let tableName = ''; let logAction = dbId ? 'Updated' : 'Added'; for (let [key, value] of formData.entries()) { if (key !== 'admin-edit-content-id' && key !== 'admin-edit-content-type') { itemDataForDB[key] = value.trim(); } } switch (type) { case 'feature': tableName = DB_TABLES.FEATURES; if (!itemDataForDB.title || !itemDataForDB.icon_class || !itemDataForDB.description) return window.showToast("Feature requires Icon, Title, and Description.", "error"); break; case 'testimonial': tableName = DB_TABLES.TESTIMONIALS; if (!itemDataForDB.quote || !itemDataForDB.author) return window.showToast("Testimonial requires Quote and Author.", "error"); if(itemDataForDB.avatar_url !== undefined) { itemDataForDB.avatar_url = itemDataForDB.avatar_url || null; }  delete itemDataForDB.avatar; break; case 'faq': tableName = DB_TABLES.FAQS; if (!itemDataForDB.question || !itemDataForDB.answer) return window.showToast("FAQ requires Question and Answer.", "error"); break; default: window.showToast("Invalid content type.", "error"); return; } try { if (dbId) { const { error } = await supabase.from(tableName).update(itemDataForDB).eq('id', dbId); if (error) throw error; } else { const { data: inserted, error } = await supabase.from(tableName).insert(itemDataForDB).select().single(); if (error) throw error; logAction += ` (ID: ${inserted.id})`; } await adminAddSystemLog(`${logAction} ${type}`, JSON.stringify(itemDataForDB)); window.showToast(`${type.charAt(0).toUpperCase() + type.slice(1)} ${dbId ? 'updated' : 'added'} successfully!`, "success"); window.closeModal('adminEditContentModal'); await loadEffectiveConfig(); await loadAdminContentManagementTabContent(); } catch (error) { console.error(`Error saving ${type}:`, error); window.showToast(`Failed to save ${type}. ${error.message}`, "error"); } });
+        if(forms.adminEditUser) forms.adminEditUser.addEventListener('submit', async (e) => { e.preventDefault(); if (currentUser.profile.role !== 'super_admin') return window.showToast("Action restricted.", "error"); const userId = dashboardElements.adminEditUserIdInput.value; try { const updates = { full_name: dashboardElements.adminEditUserNameInput.value.trim(), is_suspended: dashboardElements.adminEditUserSuspendedToggle.checked, role: dashboardElements.adminEditUserRoleSelect.value, }; const { data: initialUpdatedUser, error: updateError } = await supabase.from(DB_TABLES.PROFILES).update(updates).eq('id', userId).select().single(); if (updateError) throw updateError; let changesMade = [`Profile updated for ${initialUpdatedUser.email}`]; let currentBalance = initialUpdatedUser.wallet_balance || 0; const creditAmount = parseFloat(dashboardElements.adminEditUserCreditInput.value) || 0; if (creditAmount !== 0) { currentBalance += creditAmount; const creditReason = dashboardElements.adminEditUserCreditReasonInput.value.trim() || (creditAmount > 0 ? "Admin Credit" : "Admin Debit"); await addTransactionToDB(userId, initialUpdatedUser.email, creditAmount > 0 ? 'admin_credit' : 'admin_debit', creditReason, Math.abs(creditAmount), 'approved', 'AdminPanel', initialUpdatedUser.locked_currency || getGlobalDisplayCurrency()); changesMade.push(`${creditAmount > 0 ? 'Credited' : 'Debited'} ${formatCurrencyValue(Math.abs(creditAmount), initialUpdatedUser.locked_currency || getGlobalDisplayCurrency())}`); await addUserSystemNotificationToDB(userId, `Admin ${creditAmount > 0 ? 'credited your account with' : 'debited your account by'} ${formatCurrencyValue(Math.abs(creditAmount), initialUpdatedUser.locked_currency || getGlobalDisplayCurrency())} for: ${creditReason}`, creditAmount > 0 ? 'success' : 'warning');} const bonusAmount = parseFloat(dashboardElements.adminEditUserBonusInput.value) || 0; if (bonusAmount > 0) { currentBalance += bonusAmount; const bonusReason = dashboardElements.adminEditUserBonusReasonInput.value.trim() || "Admin Bonus"; await addTransactionToDB(userId, initialUpdatedUser.email, 'admin_bonus', bonusReason, bonusAmount, 'approved', 'AdminPanel', initialUpdatedUser.locked_currency || getGlobalDisplayCurrency()); changesMade.push(`Added Bonus ${formatCurrencyValue(bonusAmount, initialUpdatedUser.locked_currency || getGlobalDisplayCurrency())}`); await addUserSystemNotificationToDB(userId, `You received a bonus of ${formatCurrencyValue(bonusAmount, initialUpdatedUser.locked_currency || getGlobalDisplayCurrency())} for: ${bonusReason}`, 'success'); } if (currentBalance !== (initialUpdatedUser.wallet_balance || 0)) { await supabase.from(DB_TABLES.PROFILES).update({ wallet_balance: currentBalance }).eq('id', userId); } const directMessage = dashboardElements.adminDirectMessageTextInput.value.trim(); if (directMessage) { await addUserSystemNotificationToDB(userId, `Message from Admin: ${directMessage}`, 'info'); changesMade.push("Direct message sent"); } await adminAddSystemLog(`Edited User ${initialUpdatedUser.email}`, changesMade.join(', '), userId); window.showToast("User updated successfully!", "success"); window.closeModal('adminEditUserModal'); await loadAdminUserManagementTabContent(); } catch(err) { console.error("Error updating user:", err); window.showToast(`Failed to update user: ${err.message}`, "error"); }});
+        if(forms.adminReplyTicketForm) forms.adminReplyTicketForm.addEventListener('submit', async (e) => { e.preventDefault(); const ticketId = dashboardElements.adminReplyTicketIdInput.value; const replyMessage = dashboardElements.adminTicketReplyMessageInput.value.trim(); const newStatus = dashboardElements.adminTicketChangeStatusSelect.value; const currentTicketStatusElement = document.getElementById(`ticket-status-cell-${ticketId}`); const currentStatus = currentTicketStatusElement ? currentTicketStatusElement.dataset.currentStatus : null; if (!replyMessage && newStatus === currentStatus && currentUser.profile.role !== 'super_admin' ) { window.showToast("Please enter a reply or have a Super Admin change the status.", "warning"); return; } if (currentUser.profile.role === 'assistant_admin' && newStatus === 'closed' && currentStatus !== 'closed' && !replyMessage) { window.showToast("Assistant Admins must add a reply when closing an open ticket.", "warning"); return; } if (currentUser.profile.role === 'assistant_admin' && newStatus !== currentStatus && newStatus !== 'admin_reply' && newStatus !== 'closed') { window.showToast("Assistants can only reply or close tickets.", "warning"); dashboardElements.adminTicketChangeStatusSelect.value = currentStatus; return; } try { if (replyMessage) { await supabase.from(DB_TABLES.SUPPORT_TICKET_MESSAGES).insert({ ticket_id: ticketId, sender_id: currentUser.authUser.id, sender_role: 'admin', message_text: replyMessage }); } const { data: ticketData, error: ticketUpdateError } = await supabase.from(DB_TABLES.SUPPORT_TICKETS).update({ status: newStatus, updated_at: new Date().toISOString(), last_admin_reply_at: new Date().toISOString() }).eq('id', ticketId).select('user_id, subject, status').single(); if (ticketUpdateError) throw ticketUpdateError; if(replyMessage) await addUserSystemNotificationToDB(ticketData.user_id, `Admin replied to your support ticket: "${ticketData.subject}"`, 'info', false, ticketId); if(newStatus === 'closed' && ticketData.status !== 'closed') await addUserSystemNotificationToDB(ticketData.user_id, `Your support ticket "${ticketData.subject}" has been closed.`, 'info', false, ticketId); await adminAddSystemLog(`Replied/Updated Ticket`, `ID: ${ticketId}, New Status: ${newStatus}, Replied: ${replyMessage ? 'Yes' : 'No'}`); window.showToast("Ticket updated!", "success"); await loadAdminSupportTicketsTabContent(); await openAdminSupportTicketModal(ticketId);  } catch (error) { console.error("Error updating ticket:", error); window.showToast(`Failed to update ticket: ${error.message}`, "error"); }});
+        
+        console.log("initApp COMPLETED successfully.");
+    } catch (error) {
+        console.error("FATAL ERROR in initApp:", error); 
+        document.body.innerHTML = `<div style="padding:40px; text-align:center; color: #721c24; background-color: #f8d7da;"><h1>Application Error</h1><p>A critical error occurred while loading the application. Please check the browser console for details and contact support.</p><pre>${error.message}\n${error.stack ? error.stack : ''}</pre></div>`;
+    }
+}
 document.addEventListener('DOMContentLoaded', initApp);
