@@ -25,7 +25,7 @@ const NFX_BASE_CONFIG = {
     heroContent: { headline: "Unlock Your Financial Potential.", subheadline: "Explore strategic investment opportunities." },
     features: [], testimonials: [], faqs: [],
     depositMethodsDetails: {
-        bank: "Bank Name: Nedbank<br>Account Number: Nedbank<br>SWIFT/BIC: 198765<br>Reference: Your User ID",
+        bank: "Bank Name: Nedbank<br>Account Number: 1205301712<br>SWIFT/BIC: 198765<br>Reference: Your User ID",
         paypal: "Send PayPal payment to: <strong>zamba.b2015@gmail.com</strong><br>Include your User ID in the notes.",
         bitcoin: "Send BTC to the following address:<br><strong>1OfficialBTCAddressxxxxxxxxxxxxxx</strong><br>Ensure you send enough to cover network fees."
     },
